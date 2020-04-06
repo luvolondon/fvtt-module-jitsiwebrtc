@@ -10,6 +10,17 @@ You can install this module by using the following manifest URL : https://raw.gi
 To use this client you have to enable A/V in the Game settings. The module will replace the easyrtc client of vanilla FVTT.
 You can either connect via the Jitsi server by leaving the Signalling Server on "Foundry VTT". Or switch to a custom, self-hosted Jitsi server. You have to enter the hostname of the server (e.g. "myvideo.example.com) as the "Signalling Server URL" and enter authentication credentials if you have a secure domain configured on the server. 
 The Relay Server Configuration part is not used.
+The hostname entry generates this connection profile for your Jitsi server, so make sure you have all the names registered:
+this._options = {
+			hosts: {
+				domain: server["url"],
+				muc: 'conference.' + server["url"],
+				focus: 'focus.' + server["url"]
+			},
+			bosh: '//' + server["url"] + '/http-bind',
+			clientNode: 'http://jitsi.org/jitsimeet',
+			
+		};
 
 The video stream is configured for a resolution of 240 pixels height. This could later be part of GUI configuration settings.
 
