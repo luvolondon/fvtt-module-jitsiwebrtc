@@ -42,7 +42,6 @@ class JitsiRTCClient extends WebRTCInterface {
 	this._localStream = null;
 	this._remoteStreams =  {};
 	
-	this._localTracks = [];
 	this._remoteTracks = {};
 	
 	this._settings = settings;
@@ -84,7 +83,6 @@ class JitsiRTCClient extends WebRTCInterface {
      */
     this._usernameCache = {};
 	this._idCache = {};
-	this._isJoined = false;
 
   }
 
@@ -92,15 +90,15 @@ class JitsiRTCClient extends WebRTCInterface {
 
   /**
    * Initialize the WebRTC implementation.
-   * This Will only be called once by the main setupGame() initialization function.
+   * This will only be called once by the main setupGame() initialization function.
    * @return {Promise.boolean}
    */
   async initialize() {
 	const mode = this._settings["worldSettings"]["mode"];
 	
-	if (mode > 0) {
-	
+	if (mode > 0) {	
 		JitsiMeetJS.init(this._options);	
+		game.webrtc.debug("JitsiMeetJS init");
     }
     return true;
   }
@@ -115,7 +113,7 @@ class JitsiRTCClient extends WebRTCInterface {
    * @return {Promise.boolean}       Returns success/failure to connect
    */
   async connect({ host, room, username, password } = {}) {
-    return new Promise( (resolve) => {
+     new Promise( (resolve) => {
      	 
 		jitsirtc = new JitsiMeetJS.JitsiConnection(null, null,this._options);
 		
@@ -204,32 +202,32 @@ class JitsiRTCClient extends WebRTCInterface {
    }
 
 	_onLocalTracks(resolve,tracks) {
-		game.webrtc.client._localTracks = tracks;
+		
 		game.webrtc.client._localStream = new JitsiMediaStream();
 		
-		for (let i = 0; i <  game.webrtc.client._localTracks.length; i++) {
-			 game.webrtc.client._localTracks[i].addEventListener(
+		for (let i = 0; i <  tracks.length; i++) {
+			const track = tracks[i];
+			track.addEventListener(
 				JitsiMeetJS.events.track.TRACK_AUDIO_LEVEL_CHANGED,
 				audioLevel => console.log(`Audio Level local: ${audioLevel}`));
-			 game.webrtc.client._localTracks[i].addEventListener(
+			track.addEventListener(
 				JitsiMeetJS.events.track.TRACK_MUTE_CHANGED,
 				() => console.log('local track muted'));
-			 game.webrtc.client._localTracks[i].addEventListener(
+			track.addEventListener(
 				JitsiMeetJS.events.track.LOCAL_TRACK_STOPPED,
 				() => console.log('local track stoped'));
-			 game.webrtc.client._localTracks[i].addEventListener(
+			track.addEventListener(
 				JitsiMeetJS.events.track.TRACK_AUDIO_OUTPUT_CHANGED,
 				deviceId =>
 					console.log(
 						`track audio output device was changed to ${deviceId}`));
 	 
-			game.webrtc.client._localTracks[i].enabled = true;
-			game.webrtc.client._localTracks[i].track.enabled = true;
-			game.webrtc.client._localStream.tracks.push( this._localTracks[i].track);	
-			game.webrtc.client._localStream.jitsitracks.push( this._localTracks[i]);	
-			game.webrtc.client._localStream.addTrack(this._localTracks[i].track);
-			
-			game.webrtc.client._roomhandle.addTrack(this._localTracks[i]);	
+			track.enabled = true;
+			track.track.enabled = true;
+			game.webrtc.client._localStream.tracks.push( track.track);	
+			game.webrtc.client._localStream.jitsitracks.push( track);	
+			game.webrtc.client._localStream.addTrack(track.track);			
+			game.webrtc.client._roomhandle.addTrack(track);	
 		}
 		resolve(game.webrtc.client._localStream);
    } 
@@ -281,53 +279,47 @@ class JitsiRTCClient extends WebRTCInterface {
    * @private
    */
   _loginSuccess(resolve) {
- 
-	this._roomhandle = jitsirtc.initJitsiConference(this._room, {
-			openBridgeChannel: true
-	});
-	this._roomhandle.setDisplayName(game.userId);
-	
-    this._roomhandle.on(JitsiMeetJS.events.conference.TRACK_ADDED, this._onRemoteTrack);
-    this._roomhandle.on(JitsiMeetJS.events.conference.TRACK_REMOVED, track => {
-        console.log(`track removed!${track}`);
-    });
-    this._roomhandle.on(
-        JitsiMeetJS.events.conference.CONFERENCE_JOINED,
-        this._onConferenceJoined.bind(this));
-			
-    this._roomhandle.on(JitsiMeetJS.events.conference.USER_JOINED, (id, participant) => {
-	
-		game.webrtc.client._usernameCache[participant._displayName] = id;
-		game.webrtc.client._idCache[id] = participant._displayName;
-        game.webrtc.client._remoteTracks[id] = [];
-    });
 
-    this._roomhandle.on(JitsiMeetJS.events.conference.USER_LEFT, this._onUserLeft.bind(this));
-    this._roomhandle.on(JitsiMeetJS.events.conference.TRACK_MUTE_CHANGED, track => {
-        console.log(`${track.getType()} - ${track.isMuted()}`);
-    });
-    this._roomhandle.on(
-        JitsiMeetJS.events.conference.DISPLAY_NAME_CHANGED,
-        (userID, displayName) => console.log(`${userID} - ${displayName}`));
-    this._roomhandle.on(
-        JitsiMeetJS.events.conference.TRACK_AUDIO_LEVEL_CHANGED,
-        (userID, audioLevel) => console.log(`${userID} - ${audioLevel}`));
-	
-    this._roomhandle.join();
-    resolve(true);
-  
+		this._roomhandle = jitsirtc.initJitsiConference(this._room, {
+				openBridgeChannel: true
+		});
+		this._roomhandle.setDisplayName(game.userId);
+		
+		this._roomhandle.on(JitsiMeetJS.events.conference.TRACK_ADDED, this._onRemoteTrack);
+		this._roomhandle.on(JitsiMeetJS.events.conference.TRACK_REMOVED, track => {
+			console.log(`track removed!${track}`);
+		});
+		this._roomhandle.on(
+			JitsiMeetJS.events.conference.CONFERENCE_JOINED,
+			this._onConferenceJoined.bind(this, resolve));
+				
+		this._roomhandle.on(JitsiMeetJS.events.conference.USER_JOINED, (id, participant) => {
+		
+			game.webrtc.client._usernameCache[participant._displayName] = id;
+			game.webrtc.client._idCache[id] = participant._displayName;
+			game.webrtc.client._remoteTracks[id] = [];
+		});
+
+		this._roomhandle.on(JitsiMeetJS.events.conference.USER_LEFT, this._onUserLeft.bind(this));
+		this._roomhandle.on(JitsiMeetJS.events.conference.TRACK_MUTE_CHANGED, track => {
+			console.log(`${track.getType()} - ${track.isMuted()}`);
+		});
+		this._roomhandle.on(
+			JitsiMeetJS.events.conference.DISPLAY_NAME_CHANGED,
+			(userID, displayName) => console.log(`${userID} - ${displayName}`));
+		this._roomhandle.on(
+			JitsiMeetJS.events.conference.TRACK_AUDIO_LEVEL_CHANGED,
+			(userID, audioLevel) => console.log(`${userID} - ${audioLevel}`));
+		
+		this._roomhandle.join();
   }
 
 	/**
 	 * That function is executed when the conference is joined
 	 */
-	 _onConferenceJoined() {
-		
+	 _onConferenceJoined(resolve) {
 		console.log('conference joined!');
-		this._isJoined = true;
-		for (let i = 0; i < this._localTracks.length; i++) {
-			this._roomhandle.addTrack(this._localTracks[i]);
-		}
+		resolve(true);
 	}
 	
 	/**
@@ -449,7 +441,8 @@ class JitsiRTCClient extends WebRTCInterface {
    * @return {Promise}
    */
   async closeLocalStream(temporary=false) {
-
+	  
+    Hooks.callAll("rtcLocalStreamClosed", game.webrtc);
   }
   
 
@@ -464,9 +457,10 @@ class JitsiRTCClient extends WebRTCInterface {
    * @return {Promise.Object}
    */
   async getVideoSources() {
+	  	 
     return new Promise(resolve => {
       try {
-		  JitsiMeetJS.mediaDevices.enumerateDevices(this._deviceInfoToObject());
+		  JitsiMeetJS.mediaDevices.enumerateDevices(list => { resolve(this._deviceInfoToObject(list,'videoinput')) });
        
       } catch (err) {
         resolve({})
@@ -482,9 +476,10 @@ class JitsiRTCClient extends WebRTCInterface {
    * @return {Promise.Object}
    */
   async getAudioSources() {
+	  	  
     return new Promise(resolve => {
       try {
-        JitsiMeetJS.mediaDevices.enumerateDevices(this._deviceInfoToObject());
+        JitsiMeetJS.mediaDevices.enumerateDevices(list => resolve(this._deviceInfoToObject(list,'audioinput')));
       } catch (err) {
         resolve({})
       }
@@ -505,9 +500,10 @@ class JitsiRTCClient extends WebRTCInterface {
    * @return {Promise.Object}
    */
   async getAudioSinks() {
+	 
 	  return new Promise(resolve => {
       try {
-        JitsiMeetJS.mediaDevices.enumerateDevices(list => resolve(this._deviceInfoToObject(list)));
+        JitsiMeetJS.mediaDevices.enumerateDevices(list => resolve(this._deviceInfoToObject(list,'audiooutput')));
       } catch (err) {
         resolve({})
       }
@@ -519,27 +515,17 @@ class JitsiRTCClient extends WebRTCInterface {
    * @param {Array} list    The list of devices
    * @private
    */
-  _deviceInfoToObject(list) {
+  _deviceInfoToObject(list,kind) {
+
     return list.reduce((obj, device) => {
+	  if (device.kind === kind)
       obj[device.id] = device.label || game.i18n.localize("WEBRTC.UnknownDevice");
       return obj;
     }, {});
+	
   }
   
-  /* -------------------------------------------- */
-
-  /**
-   * Transform the device info array from jitsirtc into an object with {id: label} keys
-   * @param {Array} list    The list of devices
-   * @private
-   */
-  _deviceInfoToObject(list) {
-    return list.reduce((obj, device) => {
-      obj[device.id] = device.label || game.i18n.localize("WEBRTC.UnknownDevice");
-      return obj;
-    }, {});
-  }
-
+ 
  
   /* -------------------------------------------- */
 
