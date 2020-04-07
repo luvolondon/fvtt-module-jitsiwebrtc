@@ -281,7 +281,9 @@ class JitsiRTCClient extends WebRTCInterface {
   _loginSuccess(resolve) {
 
 		this._roomhandle = jitsirtc.initJitsiConference(this._room, {
-				openBridgeChannel: true
+				openBridgeChannel: true,
+				startSilent: false
+				
 		});
 		this._roomhandle.setDisplayName(game.userId);
 		
