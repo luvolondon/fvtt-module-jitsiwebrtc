@@ -37,7 +37,7 @@ add_header 'Access-Control-Allow-Methods' 'GET,HEAD,OPTIONS,POST,PUT';
 add_header 'Access-Control-Allow-Headers' 'Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers';
     }
 ```
-The '*' entry is a wildcards for all hostnames, you might want to limit this to the hostname of your FVTT server.
+The '*' entry is a wildcard for all hostnames, you might want to limit this to the hostname of your FVTT server.
 	
 The video stream is configured for a resolution of 240 pixels height. This could later be part of GUI configuration settings.
 
