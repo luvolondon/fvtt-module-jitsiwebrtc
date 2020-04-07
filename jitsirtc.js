@@ -98,6 +98,7 @@ class JitsiRTCClient extends WebRTCInterface {
 	
 	if (mode > 0) {	
 		JitsiMeetJS.init(this._options);	
+		JitsiMeetJS.setLogLevel(JitsiMeetJS.logLevels.ERROR);
 		game.webrtc.debug("JitsiMeetJS init");
     }
     return true;
@@ -113,7 +114,7 @@ class JitsiRTCClient extends WebRTCInterface {
    * @return {Promise.boolean}       Returns success/failure to connect
    */
   async connect({ host, room, username, password } = {}) {
-     new Promise( (resolve) => {
+     return new Promise( (resolve) => {
      	 
 		jitsirtc = new JitsiMeetJS.JitsiConnection(null, null,this._options);
 		
@@ -154,34 +155,40 @@ class JitsiRTCClient extends WebRTCInterface {
 		if (userId != null) { 
 			game.webrtc.onUserStreamChange( userId,client.getRemoteStreamForId(participant));
 		}
+		/*
 		track.addEventListener(
 			JitsiMeetJS.events.track.TRACK_AUDIO_LEVEL_CHANGED,
 			audioLevel => console.log(`Audio Level remote: ${audioLevel}`));
 		track.addEventListener(
 			JitsiMeetJS.events.track.TRACK_MUTE_CHANGED,
 			() => console.log('remote track muted'));
+			*/
 		track.addEventListener(
 			JitsiMeetJS.events.track.LOCAL_TRACK_STOPPED,
-			() => console.log('remote track stoped'));
+			() => console.log('Jitsi: remote track stoped'));
+		/*
 		track.addEventListener(
 			JitsiMeetJS.events.track.TRACK_AUDIO_OUTPUT_CHANGED,
 			deviceId =>
 				console.log(
 					`track audio output device was changed to ${deviceId}`));
+				*/
 	}
 	
 	getRemoteStreamForId(id) {
 		let stream = new JitsiMediaStream();
 		
 		if (game.webrtc.client._remoteTracks[id] != null) {
-		stream.jitsitracks = game.webrtc.client._remoteTracks[id];
-		
-		for (let i = 0; i <  stream.jitsitracks.length; i++) {			
-			stream.tracks.push(stream.jitsitracks[i].track);			
-			stream.addTrack(stream.jitsitracks[i].track);
-			game.webrtc.enableStreamVideo(stream);
-		}
-		return stream;
+			stream.jitsitracks = game.webrtc.client._remoteTracks[id];
+			
+			for (let i = 0; i <  stream.jitsitracks.length; i++) {		
+				
+				stream.tracks.push(stream.jitsitracks[i].track);			
+			//	stream.jitsitracks.push(stream.jitsitracks[i]);			
+				stream.addTrack(stream.jitsitracks[i].track);
+				game.webrtc.enableStreamVideo(stream);
+			}
+			return stream;
 		}
 		return null;
 	}
@@ -207,21 +214,24 @@ class JitsiRTCClient extends WebRTCInterface {
 		
 		for (let i = 0; i <  tracks.length; i++) {
 			const track = tracks[i];
+			/*
 			track.addEventListener(
 				JitsiMeetJS.events.track.TRACK_AUDIO_LEVEL_CHANGED,
 				audioLevel => console.log(`Audio Level local: ${audioLevel}`));
+			*/
 			track.addEventListener(
 				JitsiMeetJS.events.track.TRACK_MUTE_CHANGED,
-				() => console.log('local track muted'));
+				() => console.log('Jitsi: local track muted'));
 			track.addEventListener(
 				JitsiMeetJS.events.track.LOCAL_TRACK_STOPPED,
-				() => console.log('local track stoped'));
+				() => console.log('Jitsi: local track stoped'));
+			/*
 			track.addEventListener(
 				JitsiMeetJS.events.track.TRACK_AUDIO_OUTPUT_CHANGED,
 				deviceId =>
 					console.log(
-						`track audio output device was changed to ${deviceId}`));
-	 
+						`Jitsi: track audio output device was changed to ${deviceId}`));
+			*/
 			track.enabled = true;
 			track.track.enabled = true;
 			game.webrtc.client._localStream.tracks.push( track.track);	
@@ -252,24 +262,14 @@ class JitsiRTCClient extends WebRTCInterface {
 	 * @param id
 	 */
 	 _onUserLeft(id) {
-		 console.log("User left:" + game.webrtc.client._idCache[id]);
+		 console.log("Jitsi: User left:" + game.webrtc.client._idCache[id]);
 		 game.webrtc.client._remoteTracks[ id ] = null;
 		 game.webrtc.client._remoteStreams[ id ] = null;
 		 game.webrtc.client._usernameCache[ game.webrtc.client._idCache[id] ] = null;
 		 game.webrtc.client._idCache[id] = null;
 		 
 		 game.webrtc.onUserStreamChange(game.webrtc.client._idCache[id], null);
-		 
-		/*
-		if (!this._remoteTracks[id]) {
-			return;
-		}
-		const tracks = this._remoteTracks[id];
-
-		for (let i = 0; i < tracks.length; i++) {
-			tracks[i].detach($(`#${id}${tracks[i].getType()}`));
-		}
-		*/
+		
 	}
 
   /* -------------------------------------------- */
@@ -287,7 +287,7 @@ class JitsiRTCClient extends WebRTCInterface {
 		
 		this._roomhandle.on(JitsiMeetJS.events.conference.TRACK_ADDED, this._onRemoteTrack);
 		this._roomhandle.on(JitsiMeetJS.events.conference.TRACK_REMOVED, track => {
-			console.log(`track removed!${track}`);
+			console.log(`Jitsi: track removed!${track}`);
 		});
 		this._roomhandle.on(
 			JitsiMeetJS.events.conference.CONFERENCE_JOINED,
@@ -298,6 +298,8 @@ class JitsiRTCClient extends WebRTCInterface {
 			game.webrtc.client._usernameCache[participant._displayName] = id;
 			game.webrtc.client._idCache[id] = participant._displayName;
 			game.webrtc.client._remoteTracks[id] = [];
+			console.log(`Jitsi: user joined!${participant._displayName}`);
+			
 		});
 
 		this._roomhandle.on(JitsiMeetJS.events.conference.USER_LEFT, this._onUserLeft.bind(this));
@@ -307,10 +309,11 @@ class JitsiRTCClient extends WebRTCInterface {
 		this._roomhandle.on(
 			JitsiMeetJS.events.conference.DISPLAY_NAME_CHANGED,
 			(userID, displayName) => console.log(`${userID} - ${displayName}`));
+			/*
 		this._roomhandle.on(
 			JitsiMeetJS.events.conference.TRACK_AUDIO_LEVEL_CHANGED,
 			(userID, audioLevel) => console.log(`${userID} - ${audioLevel}`));
-		
+		*/
 		this._roomhandle.join();
   }
 
@@ -318,7 +321,7 @@ class JitsiRTCClient extends WebRTCInterface {
 	 * That function is executed when the conference is joined
 	 */
 	 _onConferenceJoined(resolve) {
-		console.log('conference joined!');
+		console.log('Jitsi: conference joined!');
 		resolve(true);
 	}
 	
@@ -516,12 +519,17 @@ class JitsiRTCClient extends WebRTCInterface {
    * @private
    */
   _deviceInfoToObject(list,kind) {
-
-    return list.reduce((obj, device) => {
-	  if (device.kind === kind)
-      obj[device.id] = device.label || game.i18n.localize("WEBRTC.UnknownDevice");
-      return obj;
-    }, {});
+	console.warn(JSON.stringify(list) + ":" + kind)
+	  
+	const obj = {};
+	for (let i = 0; i <  list.length; i++) {
+		if ( (list[i].kind === kind) && (list[i].deviceId != "default")) {
+			obj[list[i].deviceId] = list[i].label || game.i18n.localize("WEBRTC.UnknownDevice")
+		}
+	}
+	console.warn(JSON.stringify(obj) + ":" + kind);
+	return obj;
+   
 	
   }
   
