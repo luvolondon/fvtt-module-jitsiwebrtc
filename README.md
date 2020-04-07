@@ -29,6 +29,8 @@ The video stream is configured for a resolution of 240 pixels height. This could
 
 v0.1
 Initial release to test the integration with the FVTT API and call handling. 
+v0.1.1
+Bugs with device detection fixed. 
 
 # License
 This Foundry VTT module, writen by Luvolondon, is licensed under a Creative Commons Attribution 4.0 International License.
