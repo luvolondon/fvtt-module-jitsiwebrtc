@@ -23,6 +23,22 @@ this._options = {
 			
 		};
 ```
+
+If you run your own server, you might need to add CORS headers in your nginx config. The file often is /etc/nginx/sites-enabled/<hostname>.conf. Edit like this:
+```javascript
+    # BOSH
+    location = /http-bind {
+        proxy_pass      http://localhost:5280/http-bind;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header Host $http_host;
+add_header 'Access-Control-Allow-Origin' '*';
+add_header 'Access-Control-Allow-Credentials' 'true';
+add_header 'Access-Control-Allow-Methods' 'GET,HEAD,OPTIONS,POST,PUT';
+add_header 'Access-Control-Allow-Headers' 'Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers';
+    }
+```
+The '*' entry is a wildcards for all hostnames, you might want to limit this to the hostname of your FVTT server.
+	
 The video stream is configured for a resolution of 240 pixels height. This could later be part of GUI configuration settings.
 
 # Changelog
