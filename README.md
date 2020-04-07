@@ -45,6 +45,7 @@ The video stream is configured for a resolution of 240 pixels height. This could
 
 v0.1
 Initial release to test the integration with the FVTT API and call handling. 
+
 v0.1.1
 Bugs with device detection fixed. 
 
