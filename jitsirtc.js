@@ -519,7 +519,7 @@ class JitsiRTCClient extends WebRTCInterface {
    * @private
    */
   _deviceInfoToObject(list,kind) {
-	console.warn(JSON.stringify(list) + ":" + kind)
+	
 	  
 	const obj = {};
 	for (let i = 0; i <  list.length; i++) {
@@ -527,7 +527,7 @@ class JitsiRTCClient extends WebRTCInterface {
 			obj[list[i].deviceId] = list[i].label || game.i18n.localize("WEBRTC.UnknownDevice")
 		}
 	}
-	console.warn(JSON.stringify(obj) + ":" + kind);
+	
 	return obj;
    
 	
