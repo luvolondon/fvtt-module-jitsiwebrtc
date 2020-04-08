@@ -159,7 +159,8 @@ class JitsiRTCClient extends WebRTCInterface {
 		
 		const participant = track.getParticipantId();
 		const client = game.webrtc.client;
-		console.warn("Jitsi: track added " + participant );
+		
+		console.warn("Jitsi: track type " + track.getType() + " added " + participant );
 		if (client._remoteTracks[participant] == null) 
 			client._remoteTracks[participant] = [];
 		
@@ -169,27 +170,13 @@ class JitsiRTCClient extends WebRTCInterface {
 		if (userId != null) { 
 			game.webrtc.onUserStreamChange( userId,client.getRemoteStreamForId(participant));
 		}
-		/*
-		track.addEventListener(
-			JitsiMeetJS.events.track.TRACK_AUDIO_LEVEL_CHANGED,
-			audioLevel => console.log(`Audio Level remote: ${audioLevel}`));
-		track.addEventListener(
-			JitsiMeetJS.events.track.TRACK_MUTE_CHANGED,
-			() => console.log('remote track muted'));
-			*/
+
 		track.addEventListener(
 			JitsiMeetJS.events.track.LOCAL_TRACK_STOPPED,
 			() => console.log('Jitsi: remote track stoped'));
 
 		this.semaphore_end;
 
-		/*
-		track.addEventListener(
-			JitsiMeetJS.events.track.TRACK_AUDIO_OUTPUT_CHANGED,
-			deviceId =>
-				console.log(
-					`track audio output device was changed to ${deviceId}`));
-				*/
 	}
 	/**
 	 * Handles incoming lost remote track
@@ -204,43 +191,27 @@ class JitsiRTCClient extends WebRTCInterface {
 		
 		const participant = track.getParticipantId();
 		const client = game.webrtc.client;
-		console.warn("Jitsi: track removed " + participant );
+		console.warn("Jitsi: track type " + track.getType() + " removed " + participant );
 		
-		client._remoteTracks[participant] = client._remoteTracks[participant].filter(function(value, index, arr){ return value.ssrc != track.ssrc;});
+		if (client._remoteTracks[participant] != null) {
+			client._remoteTracks[participant] = client._remoteTracks[participant].filter(function(value, index, arr){ return value.ssrc != track.ssrc;});
 		
-		const userId = client._idCache[participant];
-		
-		if (userId != null) { 
-			if (client._remoteTracks[participant].length == 0) {
-				client._remoteTracks[participant] = null;
-				game.webrtc.onUserStreamChange( userId,null);
-				
-			} else {
-				game.webrtc.onUserStreamChange( userId,client.getRemoteStreamForId(participant));
-				
+			const userId = client._idCache[participant];
+			
+			if (userId != null) { 
+				if (client._remoteTracks[participant].length == 0) {
+					client._remoteTracks[participant] = null;
+					game.webrtc.onUserStreamChange( userId,null);
+					
+				} else {
+					game.webrtc.onUserStreamChange( userId,client.getRemoteStreamForId(participant));
+					
+				}
 			}
 		}
-		/*
-		track.addEventListener(
-			JitsiMeetJS.events.track.TRACK_AUDIO_LEVEL_CHANGED,
-			audioLevel => console.log(`Audio Level remote: ${audioLevel}`));
-		track.addEventListener(
-			JitsiMeetJS.events.track.TRACK_MUTE_CHANGED,
-			() => console.log('remote track muted'));
-			*/
-		track.addEventListener(
-			JitsiMeetJS.events.track.LOCAL_TRACK_STOPPED,
-			() => console.log('Jitsi: remote track stoped'));
 
 		this.semaphore_end;
 
-		/*
-		track.addEventListener(
-			JitsiMeetJS.events.track.TRACK_AUDIO_OUTPUT_CHANGED,
-			deviceId =>
-				console.log(
-					`track audio output device was changed to ${deviceId}`));
-				*/
 	}
 	getRemoteStreamForId(id) {
 		let stream = new JitsiMediaStream();
