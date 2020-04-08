@@ -83,7 +83,7 @@ class JitsiRTCClient extends WebRTCInterface {
      */
     this._usernameCache = {};
 	this._idCache = {};
-
+	
   }
 
   /* -------------------------------------------- */
@@ -142,6 +142,8 @@ class JitsiRTCClient extends WebRTCInterface {
 		if (track.isLocal()) {
 			return;
 		}
+		while( JitsiRTCClient._isBusy ) {}
+		JitsiRTCClient._isBusy = true;
 		
 		const participant = track.getParticipantId();
 		const client = game.webrtc.client;
@@ -166,6 +168,9 @@ class JitsiRTCClient extends WebRTCInterface {
 		track.addEventListener(
 			JitsiMeetJS.events.track.LOCAL_TRACK_STOPPED,
 			() => console.log('Jitsi: remote track stoped'));
+
+		JitsiRTCClient._isBusy = false;
+
 		/*
 		track.addEventListener(
 			JitsiMeetJS.events.track.TRACK_AUDIO_OUTPUT_CHANGED,
@@ -262,6 +267,9 @@ class JitsiRTCClient extends WebRTCInterface {
 	 * @param id
 	 */
 	 _onUserLeft(id) {
+		 while (JitsiRTCClient._isBusy) {}
+		JitsiRTCClient._isBusy= true;
+
 		 console.log("Jitsi: User left:" + game.webrtc.client._idCache[id]);
 		 game.webrtc.client._remoteTracks[ id ] = null;
 		 game.webrtc.client._remoteStreams[ id ] = null;
@@ -269,7 +277,8 @@ class JitsiRTCClient extends WebRTCInterface {
 		 game.webrtc.client._idCache[id] = null;
 		 
 		 game.webrtc.onUserStreamChange(game.webrtc.client._idCache[id], null);
-		
+		JitsiRTCClient._isBusy = false;
+
 	}
 
   /* -------------------------------------------- */
@@ -279,6 +288,8 @@ class JitsiRTCClient extends WebRTCInterface {
    * @private
    */
   _loginSuccess(resolve) {
+		
+		
 
 		this._roomhandle = jitsirtc.initJitsiConference(this._room, {
 				openBridgeChannel: true,
@@ -591,7 +602,7 @@ class JitsiRTCClient extends WebRTCInterface {
 Hooks.on("init", function() {
   
   CONFIG["WebRTC"].clientClass = JitsiRTCClient;
-
+  JitsiRTCClient._isBusy = false;
 });
 
 Hooks.on("setup", function() {
