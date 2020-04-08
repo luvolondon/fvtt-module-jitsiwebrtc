@@ -8,36 +8,8 @@ You can install this module by using the following manifest URL : https://raw.gi
 
 # How to use
 To use this client you have to enable A/V in the Game settings. The module will replace the easyrtc client of vanilla FVTT.
-You can either connect via the Jitsi server by leaving the Signalling Server on "Foundry VTT". Or switch to a custom, self-hosted Jitsi server. You have to enter the hostname of the server (e.g. "myvideo.example.com) as the "Signalling Server URL" and enter authentication credentials if you have a secure domain configured on the server. 
-The Relay Server Configuration part is not used.
-The hostname entry generates this connection profile for your Jitsi server, so make sure you have all the names registered:
-```javascript
-this._options = {
-			hosts: {
-				domain: server["url"],
-				muc: 'conference.' + server["url"],
-				focus: 'focus.' + server["url"]
-			},
-			bosh: '//' + server["url"] + '/http-bind',
-			clientNode: 'http://jitsi.org/jitsimeet',
-			
-		};
-```
+You can either connect via the Jitsi server by leaving the Signalling Server on "Foundry VTT". Or switch to a custom, self-hosted Jitsi server. A great documentation for installing your own server can be found here: https://www.vttassets.com/articles/installing-a-self-hosted-jitsi-server-to-use-with-foundry-vtt
 
-If you run your own server, you might need to add CORS headers in your nginx config. The file often is /etc/nginx/sites-enabled/<hostname>.conf. Edit like this:
-```javascript
-    # BOSH
-    location = /http-bind {
-        proxy_pass      http://localhost:5280/http-bind;
-        proxy_set_header X-Forwarded-For $remote_addr;
-        proxy_set_header Host $http_host;
-add_header 'Access-Control-Allow-Origin' '*';
-add_header 'Access-Control-Allow-Credentials' 'true';
-add_header 'Access-Control-Allow-Methods' 'GET,HEAD,OPTIONS,POST,PUT';
-add_header 'Access-Control-Allow-Headers' 'Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers';
-    }
-```
-The '*' entry is a wildcard for all hostnames, you might want to limit this to the hostname of your FVTT server.
 	
 The video stream is configured for a resolution of 240 pixels height. This could later be part of GUI configuration settings.
 
