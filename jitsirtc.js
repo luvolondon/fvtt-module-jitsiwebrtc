@@ -86,6 +86,19 @@ class JitsiRTCClient extends WebRTCInterface {
 	
   }
 
+  semaphore_start() {
+	  while( JitsiRTCClient._isBusy ) {
+		  console.warn("Jitsi: Busy waiting");
+	  }
+	  
+	  JitsiRTCClient._isBusy = true;
+		
+  }
+  
+   semaphore_end() {
+	   JitsiRTCClient._isBusy = false;
+   }
+
   /* -------------------------------------------- */
 
   /**
@@ -134,7 +147,7 @@ class JitsiRTCClient extends WebRTCInterface {
   }
   
 	/**
-	 * Handles incoming remote tracks
+	 * Handles incoming remote track
 	 * @param track JitsiTrack object
 	 */
 	 _onRemoteTrack(track) {
@@ -142,12 +155,11 @@ class JitsiRTCClient extends WebRTCInterface {
 		if (track.isLocal()) {
 			return;
 		}
-		while( JitsiRTCClient._isBusy ) {}
-		JitsiRTCClient._isBusy = true;
+		this.semaphore_start;
 		
 		const participant = track.getParticipantId();
 		const client = game.webrtc.client;
-		
+		console.warn("Jitsi: track added " + participant );
 		if (client._remoteTracks[participant] == null) 
 			client._remoteTracks[participant] = [];
 		
@@ -169,7 +181,7 @@ class JitsiRTCClient extends WebRTCInterface {
 			JitsiMeetJS.events.track.LOCAL_TRACK_STOPPED,
 			() => console.log('Jitsi: remote track stoped'));
 
-		JitsiRTCClient._isBusy = false;
+		this.semaphore_end;
 
 		/*
 		track.addEventListener(
@@ -179,7 +191,57 @@ class JitsiRTCClient extends WebRTCInterface {
 					`track audio output device was changed to ${deviceId}`));
 				*/
 	}
-	
+	/**
+	 * Handles incoming lost remote track
+	 * @param track JitsiTrack object
+	 */
+	 _onRemoteTrackRemove(track) {
+		
+		if (track.isLocal()) {
+			return;
+		}
+		this.semaphore_start;
+		
+		const participant = track.getParticipantId();
+		const client = game.webrtc.client;
+		console.warn("Jitsi: track removed " + participant );
+		
+		client._remoteTracks[participant] = client._remoteTracks[participant].filter(function(value, index, arr){ return value.ssrc != track.ssrc;});
+		
+		const userId = client._idCache[participant];
+		
+		if (userId != null) { 
+			if (client._remoteTracks[participant].length == 0) {
+				client._remoteTracks[participant] = null;
+				game.webrtc.onUserStreamChange( userId,null);
+				
+			} else {
+				game.webrtc.onUserStreamChange( userId,client.getRemoteStreamForId(participant));
+				
+			}
+		}
+		/*
+		track.addEventListener(
+			JitsiMeetJS.events.track.TRACK_AUDIO_LEVEL_CHANGED,
+			audioLevel => console.log(`Audio Level remote: ${audioLevel}`));
+		track.addEventListener(
+			JitsiMeetJS.events.track.TRACK_MUTE_CHANGED,
+			() => console.log('remote track muted'));
+			*/
+		track.addEventListener(
+			JitsiMeetJS.events.track.LOCAL_TRACK_STOPPED,
+			() => console.log('Jitsi: remote track stoped'));
+
+		this.semaphore_end;
+
+		/*
+		track.addEventListener(
+			JitsiMeetJS.events.track.TRACK_AUDIO_OUTPUT_CHANGED,
+			deviceId =>
+				console.log(
+					`track audio output device was changed to ${deviceId}`));
+				*/
+	}
 	getRemoteStreamForId(id) {
 		let stream = new JitsiMediaStream();
 		
@@ -267,8 +329,7 @@ class JitsiRTCClient extends WebRTCInterface {
 	 * @param id
 	 */
 	 _onUserLeft(id) {
-		 while (JitsiRTCClient._isBusy) {}
-		JitsiRTCClient._isBusy= true;
+		 this.semaphore_start;
 
 		 console.log("Jitsi: User left:" + game.webrtc.client._idCache[id]);
 		 game.webrtc.client._remoteTracks[ id ] = null;
@@ -277,7 +338,7 @@ class JitsiRTCClient extends WebRTCInterface {
 		 game.webrtc.client._idCache[id] = null;
 		 
 		 game.webrtc.onUserStreamChange(game.webrtc.client._idCache[id], null);
-		JitsiRTCClient._isBusy = false;
+		this.semaphore_end;
 
 	}
 
@@ -299,9 +360,7 @@ class JitsiRTCClient extends WebRTCInterface {
 		this._roomhandle.setDisplayName(game.userId);
 		
 		this._roomhandle.on(JitsiMeetJS.events.conference.TRACK_ADDED, this._onRemoteTrack);
-		this._roomhandle.on(JitsiMeetJS.events.conference.TRACK_REMOVED, track => {
-			console.log(`Jitsi: track removed!${track}`);
-		});
+		this._roomhandle.on(JitsiMeetJS.events.conference.TRACK_REMOVED, this._onRemoteTrackRemove);
 		this._roomhandle.on(
 			JitsiMeetJS.events.conference.CONFERENCE_JOINED,
 			this._onConferenceJoined.bind(this, resolve));
