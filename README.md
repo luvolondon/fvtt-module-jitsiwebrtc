@@ -8,7 +8,7 @@ You can install this module by using the following manifest URL : https://raw.gi
 
 # How to use
 To use this client you have to enable A/V in the Game settings. The module will replace the easyrtc client of vanilla FVTT.
-You can either connect via the Jitsi server by leaving the Signalling Server on "Foundry VTT". Or switch to a custom, self-hosted Jitsi server. A great documentation for installing your own server can be found here: https://www.vttassets.com/articles/installing-a-self-hosted-jitsi-server-to-use-with-foundry-vtt
+You can either connect via the Jitsi server by leaving the Signalling Server on "Foundry VTT". Or switch to a custom, self-hosted Jitsi server. A great documentation by solfolango77 for installing your own server can be found here: https://www.vttassets.com/articles/installing-a-self-hosted-jitsi-server-to-use-with-foundry-vtt
 
 	
 The video stream is configured for a resolution of 240 pixels height. This could later be part of GUI configuration settings.
