@@ -153,6 +153,7 @@ class JitsiRTCClient extends WebRTCInterface {
 	 _onRemoteTrack(track) {
 		
 		if (track.isLocal()) {
+			console.warn("Jitsi: onRemoteTrack LOCAL");
 			return;
 		}
 		this.semaphore_start;
@@ -168,7 +169,10 @@ class JitsiRTCClient extends WebRTCInterface {
 		const userId = client._idCache[participant];
 		
 		if (userId != null) { 
-			game.webrtc.onUserStreamChange( userId,client.getRemoteStreamForId(participant));
+			if (client._remoteTracks[participant].length >= 2) {
+				game.webrtc.onUserStreamChange( userId,client.getRemoteStreamForId(participant));
+				console.warn("Jitsi: Exit OnChange");
+			}
 		}
 
 		track.addEventListener(
@@ -185,6 +189,7 @@ class JitsiRTCClient extends WebRTCInterface {
 	 _onRemoteTrackRemove(track) {
 		
 		if (track.isLocal()) {
+			console.warn("Jitsi: onRemoteTrackRemove LOCAL");
 			return;
 		}
 		this.semaphore_start;
@@ -221,8 +226,7 @@ class JitsiRTCClient extends WebRTCInterface {
 			
 			for (let i = 0; i <  stream.jitsitracks.length; i++) {		
 				
-				stream.tracks.push(stream.jitsitracks[i].track);			
-			//	stream.jitsitracks.push(stream.jitsitracks[i]);			
+				stream.tracks.push(stream.jitsitracks[i].track);						
 				stream.addTrack(stream.jitsitracks[i].track);
 				game.webrtc.enableStreamVideo(stream);
 			}
@@ -252,24 +256,12 @@ class JitsiRTCClient extends WebRTCInterface {
 		
 		for (let i = 0; i <  tracks.length; i++) {
 			const track = tracks[i];
-			/*
-			track.addEventListener(
-				JitsiMeetJS.events.track.TRACK_AUDIO_LEVEL_CHANGED,
-				audioLevel => console.log(`Audio Level local: ${audioLevel}`));
-			*/
 			track.addEventListener(
 				JitsiMeetJS.events.track.TRACK_MUTE_CHANGED,
 				() => console.log('Jitsi: local track muted'));
 			track.addEventListener(
 				JitsiMeetJS.events.track.LOCAL_TRACK_STOPPED,
 				() => console.log('Jitsi: local track stoped'));
-			/*
-			track.addEventListener(
-				JitsiMeetJS.events.track.TRACK_AUDIO_OUTPUT_CHANGED,
-				deviceId =>
-					console.log(
-						`Jitsi: track audio output device was changed to ${deviceId}`));
-			*/
 			track.enabled = true;
 			track.track.enabled = true;
 			game.webrtc.client._localStream.tracks.push( track.track);	
@@ -282,16 +274,40 @@ class JitsiRTCClient extends WebRTCInterface {
    
      
   setAudioOutput(video, audioSinkId) {
-  //  easyrtc.setAudioOutput(video, audioSinkId);
+	  
+	  const client = game.webrtc.client;
+	  console.warn("Jitsi: AudioOutput set start");
+	  if (client._remoteTracks != null) {
+		  for(var p in client._remoteTracks) {
+			  const t = client._remoteTracks[p];
+			  if ( (t != null) && (t.length > 0)) {
+				  for (let i = 0; i <  t.length; i++) {
+					  if (t[i].getType() === "audio") {
+						   
+						   t[i].setAudioOutput(audioSinkId).then( () => {
+						   console.warn("Jitsi: AudioOutput set " + t[i].getParticipantId() + ":" +  t[i].getId() + ":" + audioSinkId);});
+					  }
+				  }
+			  }
+		  }
+	  }
+	  
+	
+	  console.warn("Jitsi: AudioOutput set end");
+  
   }
 
+	
     assignStreamToVideo(stream, video) {
 		if (stream != null) {
-			
-			const videotracks = stream.jitsitracks.filter(t => t.getType() === 'video');	
-			if (videotracks[0])
-				videotracks[0].attach(video);
 
+			try {
+			  video.srcObject = stream;
+			} catch (error) {
+			  video.src = window.URL.createObjectURL(stream);
+			}
+
+			
 		}
    }
   
@@ -566,7 +582,7 @@ class JitsiRTCClient extends WebRTCInterface {
 	  
 	const obj = {};
 	for (let i = 0; i <  list.length; i++) {
-		if ( (list[i].kind === kind) && (list[i].deviceId != "default")) {
+		if ( list[i].kind === kind) {
 			obj[list[i].deviceId] = list[i].label || game.i18n.localize("WEBRTC.UnknownDevice")
 		}
 	}
@@ -614,16 +630,7 @@ class JitsiRTCClient extends WebRTCInterface {
    */
   onSettingsChanged(changed) {
 
-
-    // Change the set of users
-/*    const changedUsers = changed.users || {};
-    for ( let [userId, user] of Object.entries(changedUsers) ) {
-      if ( user.blocked === undefined ) continue;
-      const easyRtcId = this._userIdToEasyRtcId(userId);
-      if ( !easyRtcId ) continue;
-      if ( user.blocked ) easyrtc.hangup(easyRtcId);
-      else this._performCall(easyRtcId).catch(()=>{});
-    }
+/* TODO
 	*/
   }
   
