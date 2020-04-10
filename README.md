@@ -27,7 +27,7 @@ v0.1.1
 Bugs with device detection fixed. 
 
 v.0.2
-Several fixes for working audio. Chrome and FF are ok now.
+Several fixes for working audio. Chrome works great, Firefox has issues when players reconnect etc.
 
 # License
 This Foundry VTT module, writen by Luvolondon, is licensed under a Creative Commons Attribution 4.0 International License.
