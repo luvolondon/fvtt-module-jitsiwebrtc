@@ -5,8 +5,11 @@ class JitsiMediaStream extends MediaStream {
 	constructor() {
 		super();
 		this.tracks = [];	
-		this.jitsitracks = [];			
+		this.jitsitracks = [];	
+		
+		
 	}
+	
 	/*
 	getAudioTracks() {		
 		return this.jitsitracks.filter(t => t.getType() === 'audio') ;
@@ -15,6 +18,18 @@ class JitsiMediaStream extends MediaStream {
 		return this.jitsitracks.filter(t => t.getType() === 'video') ;
 	}
 	*/
+}
+
+class JitsiWebRTC extends WebRTC {
+	constructor(settings) {
+		super(settings);
+	this._broadcastAudio = !this.settings.users[game.user.id].muted;	
+  }
+  
+  async initialize() {
+    await this.client.initialize();
+    return this.connect(this);
+  }
 }
 
 /**
@@ -87,16 +102,19 @@ class JitsiRTCClient extends WebRTCInterface {
   }
 
   semaphore_start() {
+	  /*
 	  while( JitsiRTCClient._isBusy ) {
 		  console.warn("Jitsi: Busy waiting");
 	  }
 	  
 	  JitsiRTCClient._isBusy = true;
-		
+	  */
   }
   
    semaphore_end() {
+	   /*
 	   JitsiRTCClient._isBusy = false;
+	   */
    }
 
   /* -------------------------------------------- */
@@ -106,7 +124,7 @@ class JitsiRTCClient extends WebRTCInterface {
    * This will only be called once by the main setupGame() initialization function.
    * @return {Promise.boolean}
    */
-  async initialize() {
+    async initialize() {
 	const mode = this._settings["worldSettings"]["mode"];
 	
 	if (mode > 0) {	
@@ -153,7 +171,6 @@ class JitsiRTCClient extends WebRTCInterface {
 	 _onRemoteTrack(track) {
 		
 		if (track.isLocal()) {
-			console.warn("Jitsi: onRemoteTrack LOCAL");
 			return;
 		}
 		this.semaphore_start;
@@ -161,7 +178,7 @@ class JitsiRTCClient extends WebRTCInterface {
 		const participant = track.getParticipantId();
 		const client = game.webrtc.client;
 		
-		console.warn("Jitsi: track type " + track.getType() + " added " + participant );
+		console.log("Jitsi: track type " + track.getType() + " added " + participant );
 		if (client._remoteTracks[participant] == null) 
 			client._remoteTracks[participant] = [];
 		
@@ -169,10 +186,11 @@ class JitsiRTCClient extends WebRTCInterface {
 		const userId = client._idCache[participant];
 		
 		if (userId != null) { 
-			if (client._remoteTracks[participant].length >= 2) {
+			if (client._remoteTracks[participant].length >= 1) {
 				game.webrtc.onUserStreamChange( userId,client.getRemoteStreamForId(participant));
-				console.warn("Jitsi: Exit OnChange");
 			}
+		} else {
+			console.error("JITSI: track of unknown user " + participant);
 		}
 
 		track.addEventListener(
@@ -189,14 +207,13 @@ class JitsiRTCClient extends WebRTCInterface {
 	 _onRemoteTrackRemove(track) {
 		
 		if (track.isLocal()) {
-			console.warn("Jitsi: onRemoteTrackRemove LOCAL");
 			return;
 		}
 		this.semaphore_start;
 		
 		const participant = track.getParticipantId();
 		const client = game.webrtc.client;
-		console.warn("Jitsi: track type " + track.getType() + " removed " + participant );
+		console.log("Jitsi: track type " + track.getType() + " removed " + participant );
 		
 		if (client._remoteTracks[participant] != null) {
 			client._remoteTracks[participant] = client._remoteTracks[participant].filter(function(value, index, arr){ return value.ssrc != track.ssrc;});
@@ -228,8 +245,9 @@ class JitsiRTCClient extends WebRTCInterface {
 				
 				stream.tracks.push(stream.jitsitracks[i].track);						
 				stream.addTrack(stream.jitsitracks[i].track);
-				game.webrtc.enableStreamVideo(stream);
+				
 			}
+			game.webrtc.enableStreamVideo(stream);
 			return stream;
 		}
 		return null;
@@ -264,19 +282,25 @@ class JitsiRTCClient extends WebRTCInterface {
 				() => console.log('Jitsi: local track stoped'));
 			track.enabled = true;
 			track.track.enabled = true;
+			
 			game.webrtc.client._localStream.tracks.push( track.track);	
 			game.webrtc.client._localStream.jitsitracks.push( track);	
 			game.webrtc.client._localStream.addTrack(track.track);			
 			game.webrtc.client._roomhandle.addTrack(track);	
+			
+			if ( (track.getType() === "audio") && (game.webrtc.settings.voiceMode === "ptt")) {				
+				game.webrtc.disableStreamAudio(game.webrtc.client._localStream);
+			}
 		}
+
 		resolve(game.webrtc.client._localStream);
    } 
    
      
   setAudioOutput(video, audioSinkId) {
-	  
+	  /*
 	  const client = game.webrtc.client;
-	  console.warn("Jitsi: AudioOutput set start");
+	  
 	  if (client._remoteTracks != null) {
 		  for(var p in client._remoteTracks) {
 			  const t = client._remoteTracks[p];
@@ -285,15 +309,13 @@ class JitsiRTCClient extends WebRTCInterface {
 					  if (t[i].getType() === "audio") {
 						   
 						   t[i].setAudioOutput(audioSinkId).then( () => {
-						   console.warn("Jitsi: AudioOutput set " + t[i].getParticipantId() + ":" +  t[i].getId() + ":" + audioSinkId);});
+						   console.log("Jitsi: AudioOutput set " + t[i].getParticipantId() + ":" +  t[i].getId() + ":" + audioSinkId);});
 					  }
 				  }
 			  }
 		  }
 	  }
-	  
-	
-	  console.warn("Jitsi: AudioOutput set end");
+	  */
   
   }
 
@@ -306,8 +328,6 @@ class JitsiRTCClient extends WebRTCInterface {
 			} catch (error) {
 			  video.src = window.URL.createObjectURL(stream);
 			}
-
-			
 		}
    }
   
@@ -336,13 +356,10 @@ class JitsiRTCClient extends WebRTCInterface {
    * @private
    */
   _loginSuccess(resolve) {
-		
-		
 
 		this._roomhandle = jitsirtc.initJitsiConference(this._room, {
 				openBridgeChannel: true,
-				startSilent: false
-				
+				startSilent: false			
 		});
 		this._roomhandle.setDisplayName(game.userId);
 		
@@ -352,13 +369,11 @@ class JitsiRTCClient extends WebRTCInterface {
 			JitsiMeetJS.events.conference.CONFERENCE_JOINED,
 			this._onConferenceJoined.bind(this, resolve));
 				
-		this._roomhandle.on(JitsiMeetJS.events.conference.USER_JOINED, (id, participant) => {
-		
+		this._roomhandle.on(JitsiMeetJS.events.conference.USER_JOINED, (id, participant) => {		
 			game.webrtc.client._usernameCache[participant._displayName] = id;
 			game.webrtc.client._idCache[id] = participant._displayName;
 			game.webrtc.client._remoteTracks[id] = [];
-			console.log(`Jitsi: user joined!${participant._displayName}`);
-			
+			console.log(`Jitsi: user joined!${participant._displayName}`);		
 		});
 
 		this._roomhandle.on(JitsiMeetJS.events.conference.USER_LEFT, this._onUserLeft.bind(this));
@@ -640,12 +655,51 @@ Hooks.on("init", function() {
   
   CONFIG["WebRTC"].clientClass = JitsiRTCClient;
   JitsiRTCClient._isBusy = false;
+
 });
 
 Hooks.on("setup", function() {
-   
+	
+   WebRTC.prototype.initialize = async function () {
+    return true;
+  };
+
+  WebRTC.prototype.isStreamAudioEnabled = function(stream) {
+	if (stream == null) return false;
+	if ( (stream.constructor.name === "JitsiMediaStream") && game.webrtc.client._localStream && (stream.id === game.webrtc.client._localStream.id)) {
+		return game.webrtc._broadcastAudio;
+	}
+    const tracks = stream.getAudioTracks();
+    return tracks.some(t => t.enabled);
+  };
+   WebRTC.prototype.enableMicrophone = function(enable = true) {
+    const stream = this.client.getStreamForUser(game.user.id);
+	const mode = this.settings.voiceMode;
+    if ( ["always", "activity"].includes(mode) ) {		
+		this.enableStreamAudio(stream, enable);
+	}
+    game.webrtc._broadcastAudio = enable;
+  };
+  WebRTC.prototype.enableCamera = function(enable = true) {
+    let streamInfos = this.client.getConnectedStreams();
+    let stream = this.client.getStreamForUser(game.user.id);
+    // Enable/Disable the master stream so it affects new users joining in
+    this.enableStreamVideo(stream, enable);
+  };
+  WebRTC.prototype.broadcastMicrophone = function(broadcast) {
+  };
+  WebRTC.prototype._pttBroadcast = function(stream, broadcast) {
+	  console.warn(game.webrtc._broadcastAudio +":"+ broadcast);
+    ui.webrtc.setUserIsSpeaking(game.user.id, broadcast);
+	this.enableStreamAudio(stream, game.webrtc._broadcastAudio && broadcast);
+  };
+
 });
 
 Hooks.on("ready", function() {
-
-});
+	
+	game.webrtc = new JitsiWebRTC(new WebRTCSettings());	
+	game.webrtc.initialize();
+	
+}); 
+    
