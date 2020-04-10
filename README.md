@@ -5,6 +5,9 @@ First tests with 4-5 players resulted in ~700Kbit/s upload and ~ 1Mbit/s downloa
 
 This is a first version to test the integration into FVTT. Have a look at the Issues list for the not yet working features.
 
+Caution:
+Atm the Jitsi Meet lib only works ok if all users are running a Chromium based browser. A solution to add Firefox and Safari to the supported browsers has been announced for April 2020. See https://github.com/jitsi/jitsi-meet/issues/4758 for current progress.
+
 # Installation
 You can install this module by using the following manifest URL : https://raw.githubusercontent.com/luvolondon/fvtt-module-jitsiwebrtc/master/module.json
 
