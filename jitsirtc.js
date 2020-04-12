@@ -474,7 +474,7 @@ class JitsiRTCClient extends WebRTCInterface {
     return new Promise(async (resolve) => {
 		
 		JitsiMeetJS.createLocalTracks({ devices: [ 'audio', 'video' ],resolution: 240,
-			disableSimulcast: true,
+			disableSimulcast: false,
 			p2p: { 
 				enabled:false
 			},
