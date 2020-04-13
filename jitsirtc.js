@@ -660,6 +660,7 @@ Hooks.on("init", function() {
 
 Hooks.on("setup", function() {
 	
+   
    WebRTC.prototype.initialize = async function () {
     return true;
   };
@@ -699,6 +700,12 @@ Hooks.on("setup", function() {
 Hooks.on("ready", function() {
 	
 	game.webrtc = new JitsiWebRTC(new WebRTCSettings());	
+	
+	let roomid = game.webrtc.settings.getWorldSetting("server.room");
+    if ( roomid == "" ) {
+	  roomid = "fvtt" + (10000000 + Math.floor((Math.random() * 10000000) + 1));
+	  game.webrtc.settings.setWorldSetting("server.room",roomid);
+    }
 	game.webrtc.initialize();
 	
 }); 
