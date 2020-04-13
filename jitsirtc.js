@@ -23,7 +23,7 @@ class JitsiMediaStream extends MediaStream {
 class JitsiWebRTC extends WebRTC {
 	constructor(settings) {
 		super(settings);
-	this._broadcastAudio = !this.settings.users[game.user.id].muted;	
+	
   }
   
   async initialize() {
@@ -112,9 +112,9 @@ class JitsiRTCClient extends WebRTCInterface {
   }
   
    semaphore_end() {
-	   /*
-	   JitsiRTCClient._isBusy = false;
-	   */
+	   
+	   //JitsiRTCClient._isBusy = false;
+	   
    }
 
   /* -------------------------------------------- */
@@ -280,15 +280,18 @@ class JitsiRTCClient extends WebRTCInterface {
 			track.addEventListener(
 				JitsiMeetJS.events.track.LOCAL_TRACK_STOPPED,
 				() => console.log('Jitsi: local track stoped'));
+				
+					
 			track.enabled = true;
 			track.track.enabled = true;
+			
 			
 			game.webrtc.client._localStream.tracks.push( track.track);	
 			game.webrtc.client._localStream.jitsitracks.push( track);	
 			game.webrtc.client._localStream.addTrack(track.track);			
 			game.webrtc.client._roomhandle.addTrack(track);	
 			
-			if ( (track.getType() === "audio") && (game.webrtc.settings.voiceMode === "ptt")) {				
+			if (  (track.getType() === "audio") && (  (game.webrtc.settings.voiceMode === "ptt") || this.settings.users[game.user.id].muted)) {				
 				game.webrtc.disableStreamAudio(game.webrtc.client._localStream);
 			}
 		}
@@ -665,10 +668,11 @@ Hooks.on("setup", function() {
     return true;
   };
 
-  WebRTC.prototype.isStreamAudioEnabled = function(stream) {
-	if (stream == null) return false;
+  WebRTC.prototype.isStreamAudioEnabled = function(stream) { 
+	if (stream == null) return false; 
 	if ( (stream.constructor.name === "JitsiMediaStream") && game.webrtc.client._localStream && (stream.id === game.webrtc.client._localStream.id)) {
-		return game.webrtc._broadcastAudio;
+		
+		return !this.settings.users[game.user.id].muted;
 	}
     const tracks = stream.getAudioTracks();
     return tracks.some(t => t.enabled);
@@ -679,7 +683,7 @@ Hooks.on("setup", function() {
     if ( ["always", "activity"].includes(mode) ) {		
 		this.enableStreamAudio(stream, enable);
 	}
-    game.webrtc._broadcastAudio = enable;
+    this.settings.users[game.user.id].muted = !enable;
   };
   WebRTC.prototype.enableCamera = function(enable = true) {
     let streamInfos = this.client.getConnectedStreams();
@@ -690,9 +694,9 @@ Hooks.on("setup", function() {
   WebRTC.prototype.broadcastMicrophone = function(broadcast) {
   };
   WebRTC.prototype._pttBroadcast = function(stream, broadcast) {
-	  console.warn(game.webrtc._broadcastAudio +":"+ broadcast);
+	  console.warn(!this.settings.users[game.user.id].muted +":"+ broadcast);
     ui.webrtc.setUserIsSpeaking(game.user.id, broadcast);
-	this.enableStreamAudio(stream, game.webrtc._broadcastAudio && broadcast);
+	this.enableStreamAudio(stream, !this.settings.users[game.user.id].muted && broadcast);
   };
 
 });
