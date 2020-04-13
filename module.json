@@ -10,5 +10,6 @@
   "manifest": "https://raw.githubusercontent.com/luvolondon/fvtt-module-jitsiwebrtc/master/module.json",
   "download": "https://github.com/luvolondon/fvtt-module-jitsiwebrtc/archive/v0.2.3.zip",
   "minimumCoreVersion": "0.5.3",
+  "compatibleCoreVersion": "0.5.4",
   "scripts": ["jitsirtc.js","lib-jitsi-meet.min.js"]
 }
