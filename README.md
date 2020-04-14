@@ -1,4 +1,4 @@
-# fvtt-module-jitsiwebrtc
+# Jitsiwebrtc
 Replacement for the easyrtc p2p client to use a Jitsi relay server for A/V. It has the main advantage of being able to run all communication via a relay server. A player only needs to send her/his A/V stream to a single receiver, where it is distributed to all other players. If you have more then 2 players, this is a bandwidth improvement. This feature is called SFU (Selective Forwarding Unit). Read more about Jitsi on https://jitsi.org/.
 
 First tests with 4-5 players resulted in ~700Kbit/s upload and ~ 1Mbit/s download rate for each player.
