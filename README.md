@@ -32,5 +32,5 @@ Several fixes for working audio. Chrome works great, Firefox has issues when pla
 v.0.2.1 - v.0.2.6 Several fixes for acting dynamically on incoming A/V tracks, now with Audio-only, Video-only
 
 # License
-This Foundry VTT module, writen by Luvolondon, is licensed under a Creative Commons Attribution 4.0 International License.
+This Foundry VTT module, writen by Luvolondon , is licensed under a Creative Commons Attribution 4.0 International License.
 
