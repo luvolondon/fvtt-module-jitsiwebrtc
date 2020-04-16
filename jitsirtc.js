@@ -100,7 +100,6 @@ class JitsiRTCClient extends WebRTCInterface {
 	this._idCache = {};
 	this._withAudio = false;
 	this._withVideo = false;
-	
   }
 
   semaphore_start() {
@@ -170,6 +169,19 @@ class JitsiRTCClient extends WebRTCInterface {
     });
   }
   
+  uiUpdateNeeded() {
+	  if (ui.webrtc && (ui.webrtc._state == 1)) {
+
+		  setTimeout( function() { 
+			game.webrtc.client.uiUpdateNeeded();			
+		  
+		  }, 2000);
+	  } else {		 
+
+		  ui.webrtc.render(true);
+	  }
+  }
+  
 	/**
 	 * Handles incoming remote track
 	 * @param track JitsiTrack object
@@ -190,20 +202,17 @@ class JitsiRTCClient extends WebRTCInterface {
 		
 		client._remoteTracks[participant].push(track);
 		const userId = client._idCache[participant];
-				
-		let trackcount = 0;
-		if ( client._withAudio ) trackcount++;
-		if ( client._withVideo ) trackcount++;
-		
+					
 		if (userId != null) { 
-			if (client._remoteTracks[participant].length >= trackcount) {
-				console.log("Jitsi: onUserStreamChange " + userId );
+				console.log("Jitsi: onUserStreamChange " + userId );				
 				
-				if (ui.webrtc && (ui.webrtc._state == 1)) {
-						setTimeout( function() { game.webrtc.onUserStreamChange( userId,client.getRemoteStreamForId(participant)); }, 1000);	
-				} else 
-					game.webrtc.onUserStreamChange( userId,client.getRemoteStreamForId(participant));
-			}
+				if (track.getType() === "video") {
+					game.webrtc.onUserVideoStreamChange( userId,client.getRemoteStreamForId(participant));
+				}
+				if (track.getType() === "audio") {
+					game.webrtc.onUserAudioStreamChange( userId,client.getRemoteStreamForId(participant));
+				}
+		
 		} else {
 			console.error("JITSI: track of unknown user " + participant);
 		}
@@ -238,21 +247,14 @@ class JitsiRTCClient extends WebRTCInterface {
 			const userId = client._idCache[participant];
 			
 			if (userId != null) { 
-				if (client._remoteTracks[participant].length == 0) {
 					client._remoteTracks[participant] = null;
 					
-					if (ui.webrtc && (ui.webrtc._state == 1)) {
-						setTimeout( function() { game.webrtc.onUserStreamChange( userId,null); }, 1000);	
-					} else 
-						game.webrtc.onUserStreamChange( userId,null);
-					
-				} else {
-					if (ui.webrtc && (ui.webrtc._state == 1)) {
-						setTimeout( function() { game.webrtc.onUserStreamChange( userId,client.getRemoteStreamForId(participant)); }, 1000);	
-					} else 
-						game.webrtc.onUserStreamChange( userId,client.getRemoteStreamForId(participant));
-					
-				}
+					if (track.getType() === "video") {
+						game.webrtc.onUserVideoStreamChange( userId,client.getRemoteStreamForId(participant));
+					}
+					if (track.getType() === "audio") {
+						game.webrtc.onUserAudioStreamChange( userId,client.getRemoteStreamForId(participant));
+					}					
 			}
 		}
 
@@ -728,7 +730,37 @@ Hooks.on("setup", function() {
     ui.webrtc.setUserIsSpeaking(game.user.id, broadcast);
 	this.enableStreamAudio(stream, !this.settings.users[game.user.id].muted && broadcast);
   };
+  WebRTC.prototype.onUserAudioStreamChange = function(userId, stream) {
+    const userSettings = this.settings.users[userId];
+	if (!userSettings.canBroadcastAudio) {
+		
+		// Start/stop listening to stream audio levels depending on whether the stream (streamHasAudio is null safe) has audio tracks or not
+		if (this.streamHasAudio(stream)) {
+		  const audioLevelHandler = this._onAudioLevel.bind(this, userId);
+		  game.audio.startLevelReports(userId, stream, audioLevelHandler, CONFIG.WebRTC.emitVolumeInterval);
+		}
+		else game.audio.stopLevelReports(userId);
+		this._resetSpeakingHistory(userId);
 
+		// Disable stream components if muted or hidden
+		if (userSettings.muted) this.disableStreamAudio(stream);
+		
+		game.webrtc.client.uiUpdateNeeded();
+	}
+  }
+  
+  WebRTC.prototype.onUserVideoStreamChange = function(userId, stream) {
+    const userSettings = this.settings.users[userId];
+    if (userSettings.canBroadcastVideo) {
+		this.setVideoStream(userId, stream);
+
+		// Disable stream components if muted or hidden
+		if (userSettings.hidden) this.disableStreamVideo(stream);
+		
+		game.webrtc.client.uiUpdateNeeded();
+    }
+  }
+  
 });
 
 Hooks.on("ready", function() {
