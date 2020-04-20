@@ -6,7 +6,7 @@ First tests with 4-5 players resulted in ~700Kbit/s upload and ~ 1Mbit/s downloa
 This is a first version to test the integration into FVTT. Have a look at the Issues list for the not yet working features.
 
 Caution:
-Atm the Jitsi Meet lib only works ok if all users are running a Chromium based browser. A solution to add Firefox and Safari to the supported browsers has been announced for April 2020. See https://github.com/jitsi/jitsi-meet/issues/4758 for current progress. Update: With version 0.2.9 a new version of the API lib is included. This could help with problems on FF and Safari.
+Atm the Jitsi Meet lib only works ok if all users are running a Chromium based browser. A solution to add Firefox and Safari to the supported browsers has been announced for April 2020. See https://github.com/jitsi/jitsi-meet/issues/4758 for current progress. Update: With version 0.2.9 a new version of the API lib is included. This should help with problems on FF and Safari.
 
 # Installation
 You can install this module by using the following manifest URL : https://raw.githubusercontent.com/luvolondon/fvtt-module-jitsiwebrtc/master/module.json
@@ -26,10 +26,13 @@ Initial release to test the integration with the FVTT API and call handling.
 v0.1.1
 Bugs with device detection fixed. 
 
-v.0.2
+v0.2
 Several fixes for working audio. Chrome works great, Firefox has issues when players reconnect etc.
 
-v.0.2.1 - v.0.2.6 Several fixes for acting dynamically on incoming A/V tracks, now with Audio-only, Video-only
+v0.2.1 - v.0.2.6 Several fixes for acting dynamically on incoming A/V tracks, now with Audio-only, Video-only
+
+v0.2.9 
+Updated the included Jitsi Meet API Lib
 
 # License
 This Foundry VTT module, writen by Luvolondon, is licensed under a Creative Commons Attribution 4.0 International License.
