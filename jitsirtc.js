@@ -517,15 +517,15 @@ class JitsiRTCClient extends WebRTCInterface {
 			micDeviceId : audioSrc,
 			constraints: {
 					video: {
-						aspectRatio: 4 /3,
+						aspectRatio: 4/3,
 						height: {
 							ideal: 240,
-							max: 360,
+							max: 480,
 							min: 120
 						},
 						width: {
-							ideal: 360,
-							max: 480,
+							ideal: 320,
+							max: 640,
 							min: 160
 						}
 
