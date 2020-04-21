@@ -34,6 +34,9 @@ v0.2.1 - v.0.2.6 Several fixes for acting dynamically on incoming A/V tracks, no
 v0.2.9 
 Updated the included Jitsi Meet API Lib
 
+v0.2.10
+Included changes from @bekit to improve resolution selection
+
 # License
 This Foundry VTT module, writen by Luvolondon, is licensed under a Creative Commons Attribution 4.0 International License.
 
