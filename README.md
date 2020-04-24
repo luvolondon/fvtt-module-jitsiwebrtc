@@ -37,6 +37,9 @@ Updated the included Jitsi Meet API Lib
 v0.2.10
 Included changes from @bekit to improve resolution selection
 
+v0.2.11
+Cleanup of variables for book-keeping of local and remote tracks. Now user-blocking of audio and video is possible. More robust against reloads/changes coming from the clients.
+
 # License
 This Foundry VTT module, writen by Luvolondon, is licensed under a Creative Commons Attribution 4.0 International License.
 
