@@ -1,16 +1,157 @@
+//const MODEL_URL = 'modules/jitsirtc/models'
+
+
 
 let jitsirtc = null;
-
+			
 class JitsiWebRTC extends WebRTC {
 	constructor(settings) {
 		super(settings);
-	
+	this._faceOverlay = false;
+
   }
-  
+
+  setFaceOverlay(enable) {
+	this._faceOverlay = enable;
+  }
+
   async initialize() {
     await this.client.initialize();
-    return this.connect(this);
+	
+	return this.connect(this);
   }
+}
+
+const JITSI_SET_INTERVAL = 1;
+const JITSI_CLEAR_INTERVAL = 2;
+const JITSI_INTERVAL_TIMEOUT = 3;
+
+const code = `
+    var timer;
+    onmessage = function(request) {
+        switch (request.data.id) {
+        case ${JITSI_SET_INTERVAL}: {
+            timer = setInterval(() => {
+                postMessage({ id: ${JITSI_INTERVAL_TIMEOUT} });
+            }, request.data.timeMs);
+            break;
+        }
+        case ${JITSI_CLEAR_INTERVAL}: {
+            if (timer) {
+                clearInterval(timer);
+            }
+            break;
+        }
+        }
+    };
+`;
+const timerWorkerScript = URL.createObjectURL(new Blob([ code ], { type: 'application/javascript' }));
+
+let overlaycanvas = $('<canvas/>',
+{id:"camcanvas",width: 300, height:200,style:'position:absolute;top:0;width:100%;height:100%'});
+
+class OverlayEffect {
+
+	constructor(bpModel) {
+		
+		this._outputCanvasElement = $('#camcanvas')[0];	
+			
+        this._outputCanvasContext = this._outputCanvasElement.getContext('2d');
+        this._inputVideoElement = document.createElement('video');
+		this._overlayTimerWorker = new Worker(timerWorkerScript);
+		this._overlayTimerWorker.onmessage = this._onOverlayTimer.bind(this);
+		this._overlayInProgress = false;
+		this._bpModel = bpModel;
+		this._overlay = {};
+		this._overlay.img = new Image();
+		this._overlay.img.src = 'modules/jitsirtc/sw.png';
+
+		this._lasteyex = null;
+		this._lasteyey = null;
+		this._lasteyedist = null;
+
+		this._segmentationData = null;
+	}
+
+	async _onOverlayTimer(response) {
+        if (response.data.id === JITSI_INTERVAL_TIMEOUT) {
+            if (!this._overlayInProgress) {
+                await this._renderOverlay();
+            }
+        }
+	}
+	
+	
+    async _renderOverlay() {
+		this._overlayInProgress = true;
+				
+        this._segmentationData = await this._bpModel.segmentPerson(this._inputVideoElement, {
+            internalResolution: 'medium', // resized to 0.5 times of the original resolution before inference
+            maxDetections: 1, // max. number of person poses to detect per image
+            segmentationThreshold: 0.7 // represents probability that a pixel belongs to a person
+		});
+
+		this._overlayInProgress = false;
+
+		if (this._segmentationData.allPoses[0]) {
+			const leftEye = this._segmentationData.allPoses[0].keypoints[1].position;
+			const rightEye = this._segmentationData.allPoses[0].keypoints[2].position;
+			const leftEar = this._segmentationData.allPoses[0].keypoints[3].position;
+			const rightEar = this._segmentationData.allPoses[0].keypoints[4].position;
+			const nose = this._segmentationData.allPoses[0].keypoints[0].position;
+			//const rightShoulder = this._segmentationData.allPoses[0].keypoints[6].position;
+			let eyex = (leftEye.x + rightEye.x) / 2;			
+			let eyey = (leftEye.y + rightEye.y) / 2;
+			
+			let eyedist = leftEye.x - rightEye.x;
+			
+			if (Math.abs(this._lasteyex - eyex) < 8) eyex = this._lasteyex;
+			if (Math.abs(this._lasteyey - eyey) < 8) eyey = this._lasteyey;
+			if (Math.abs(this._lasteyedist - eyedist) < 8) eyedist = this._lasteyedist;
+			 
+			const width = eyedist * 5; 
+			this._lasteyex = eyey;
+			this._lasteyey = eyey;
+			this._lasteyedist = eyedist;
+												
+			this._outputCanvasContext.drawImage(this._inputVideoElement, 0, 0); 								
+			if (this._overlay.img ) {										
+				this._outputCanvasContext.drawImage(this._overlay.img, 
+					eyex - width  / 2, eyey - width * 0.52, width,width);
+			}
+		}
+	}
+	
+	isEnabled(jitsiLocalTrack) {
+        return jitsiLocalTrack.isVideoTrack() && jitsiLocalTrack.videoType === 'camera';
+	}
+	
+	startEffect(stream) {
+        const firstVideoTrack = stream.getVideoTracks()[0];
+        const { height, frameRate, width }
+            = firstVideoTrack.getSettings ? firstVideoTrack.getSettings() : firstVideoTrack.getConstraints();
+
+        this._outputCanvasElement.width = parseInt(width, 10);
+        this._outputCanvasElement.height = parseInt(height, 10);
+        this._inputVideoElement.width = parseInt(width, 10);
+        this._inputVideoElement.height = parseInt(height, 10);
+        this._inputVideoElement.autoplay = true;
+        this._inputVideoElement.srcObject = stream;
+        this._inputVideoElement.onloadeddata = () => {
+            this._overlayTimerWorker.postMessage({
+                id: JITSI_SET_INTERVAL,
+                timeMs: 1000 / parseInt(frameRate / 5.0, 10)
+            });
+        };
+
+        return this._outputCanvasElement.captureStream(parseInt(frameRate / 5.0, 10));
+	}
+	
+	stopEffect() {
+        this._overlayTimerWorker.postMessage({
+            id: JITSI_CLEAR_INTERVAL
+        });
+    }
 }
 
 /**
@@ -33,8 +174,6 @@ class JitsiRTCClient extends WebRTCInterface {
      */
     
 	this._roomhandle = null;
-	
-	this._localTracks = [];
 	this._remoteTracks = {};
 	
 	this._settings = settings;
@@ -69,25 +208,19 @@ class JitsiRTCClient extends WebRTCInterface {
 		}
 		
 	}
-    /**
-     * A cached mapping of jitsiRtcId participant ids to FVTT user ids
-     * @type {Object}
-     * @private
-     */
+    
     this._usernameCache = {};
 	this._idCache = {};
 	this._withAudio = false;
 	this._withVideo = false;
   }
 
+  getLocalTracks() {
+	if (this._roomhandle) 
+		 return this._roomhandle.getLocalTracks();
+	return [];
+  }
 
-  /* -------------------------------------------- */
-
-  /**
-   * Initialize the WebRTC implementation.
-   * This will only be called once by the main setupGame() initialization function.
-   * @return {Promise.boolean}
-   */
     async initialize() {
 		
 		const mode = this._settings["worldSettings"]["mode"];
@@ -194,8 +327,7 @@ class JitsiRTCClient extends WebRTCInterface {
 		const client = game.webrtc.client;
 		console.warn("Jitsi: track type " + track.getType() + " removed " + participant  );
 		
-		if (client._remoteTracks[participant] != null) {
-			console.warn(client._remoteTracks[participant]);
+		if (client._remoteTracks[participant] != null) {		
 
 			client._remoteTracks[participant] = client._remoteTracks[participant].filter(function(value, index, arr){ 
 				return value.ssrc != track.ssrc;});
@@ -239,16 +371,15 @@ class JitsiRTCClient extends WebRTCInterface {
 	getStreamForUser(userId) {
 		if (userId === game.userId) { 
 			let stream = new MediaStream();
-			const tracks = game.webrtc.client._localTracks;
+			const tracks = game.webrtc.client.getLocalTracks();
 	
 			for (let i = 0; i <  tracks.length; i++) {		
 				stream.addTrack(tracks[i].track);	
-			}
-			console.warn(stream);
+			}		
 			return stream;
 
 		}
-		return game.webrtc.client.getRemoteStreamForUserId(userId);
+		return this.getRemoteStreamForUserId(userId);
    }
 
 	_onLocalTracks(resolve,tracks) {
@@ -258,14 +389,15 @@ class JitsiRTCClient extends WebRTCInterface {
 	
 			track.enabled = true;
 			track.track.enabled = true;
-console.warn("Jitsi: local track added " + track.getType());			
-			
-			game.webrtc.client._localTracks.push(track);
 			game.webrtc.client._roomhandle.addTrack(track);	
-			
-			if (  (track.getType() === "audio") && (  (game.webrtc.settings.voiceMode === "ptt") || this.settings.users[game.user.id].muted)) {				
+
+			console.warn("Jitsi: local track added " + track.getType());						
+
+			if (  (track.getType() === "audio") && 
+				(  (game.webrtc.settings.voiceMode === "ptt") || this.settings.users[game.user.id].muted)) {				
 				game.webrtc.disableStreamAudio(this.getStreamForUser(game.userId));
 			}
+
 		}
 
 		resolve(this.getStreamForUser(game.userId));
@@ -292,16 +424,23 @@ console.warn("Jitsi: local track added " + track.getType());
 	  */
   
   }
-
-	
+ 	
     assignStreamToVideo(stream, video) {
 		if (stream != null) {
-
+	console.warn("assignStreamToVideo");
+	console.warn(stream.getTracks());
+	
 			try {
-			  video.srcObject = stream;
+				video.srcObject = stream;
 			} catch (error) {
-			  video.src = window.URL.createObjectURL(stream);
+				video.src = window.URL.createObjectURL(stream);
 			}
+
+			if (game.webrtc._faceOverlay && $(video).hasClass("local-camera")) {
+
+				$(video).parent().append( overlaycanvas );
+			}	  
+
 		}
    }
   
@@ -330,7 +469,10 @@ console.warn("Jitsi: local track added " + track.getType());
 
 		this._roomhandle = jitsirtc.initJitsiConference(this._room, {
 				openBridgeChannel: true,
-				startSilent: false			
+				startSilent: false	,
+				p2p: { 
+					enabled:false
+				}		
 		});
 		this._roomhandle.setDisplayName(game.userId);
 
@@ -432,9 +574,24 @@ console.warn("Jitsi: local track added " + track.getType());
   async initLocalStream(audioSrc, videoSrc, temporary=false) {
     return new Promise(async (resolve) => {
 		
+		let bpModel = null;
+		let thiseffects = [];
+
+		if (game.webrtc._faceOverlay) {
+			bpModel = await bodyPix.load({
+				architecture: 'MobileNetV1',
+				outputStride: 16,
+				multiplier: 0.50,
+				quantBytes: 2
+			});
+			thiseffects = [
+				new OverlayEffect(bpModel)
+			];
+		}
+
 		const withAudio = this._withAudio && audioSrc;
 		const withVideo = this._withVideo && videoSrc;
-		let localtracks = game.webrtc.client._localTracks;
+		let localtracks = game.webrtc.client.getLocalTracks();
 
 		let audioFound = false;
 		let videoFound = false;
@@ -445,10 +602,7 @@ console.warn("Jitsi: local track added " + track.getType());
 				audioFound = true;
 				if (!withAudio) {
 console.warn("Audio Track dispose");					
-					track.dispose();
-
-					game.webrtc.client._localTracks =  game.webrtc.client._localTracks.filter(function(value, index, arr){ 
-						return value.track.id != track.track.id;});
+					track.dispose();					
 						
 				}
 			}
@@ -457,8 +611,6 @@ console.warn("Audio Track dispose");
 				if (!withVideo) {
 console.warn("Video Track dispose");					
 					track.dispose();
-					game.webrtc.client._localTracks =  game.webrtc.client._localTracks.filter(function(value, index, arr){ 
-						return value.track.id != track.track.id;});
 				}
 			}
 		}
@@ -472,12 +624,10 @@ console.warn("Video Track dispose");
 			
 
 			JitsiMeetJS.createLocalTracks({ devices: devlist,resolution: 240,
-				disableSimulcast: false,
-				p2p: { 
-					enabled:false
-				},
+				disableSimulcast: false,				
 				cameraDeviceId : videoSrc,
 				micDeviceId : audioSrc,
+				effects : thiseffects,
 				constraints: {
 						video: {
 							aspectRatio: 4/3,
@@ -695,7 +845,7 @@ Hooks.on("setup", function() {
   };
 
   WebRTC.prototype._pttBroadcast = function(stream, broadcast) {
-	  console.warn(!this.settings.users[game.user.id].muted +":"+ broadcast);
+	  
     ui.webrtc.setUserIsSpeaking(game.user.id, broadcast);
 	this.enableStreamAudio(stream, !this.settings.users[game.user.id].muted && broadcast);
   };
@@ -737,13 +887,24 @@ Hooks.on("setup", function() {
 
 Hooks.on("ready", function() {
 	
+	game.settings.register("jitsirtc", "faceOverlay", {
+		name: "Demo face overlay",
+		hint: "Activate the face overlay effect (demo modus)",
+		scope: "world",
+		config: true,
+		default: false,
+    	type: Boolean,
+		onChange: enable => game.webrtc.setFaceOverlay(enable)
+	});	
+
 	game.webrtc = new JitsiWebRTC(new WebRTCSettings());	
 	
 	let roomid = game.webrtc.settings.getWorldSetting("server.room");
     if ( roomid == "" ) {
 	  roomid = "fvtt" + (10000000 + Math.floor((Math.random() * 10000000) + 1));
 	  game.webrtc.settings.setWorldSetting("server.room",roomid);
-    }
+	}
+	game.webrtc.setFaceOverlay(game.settings.get("jitsirtc", "faceOverlay"));
 	game.webrtc.initialize();
 	
 }); 
