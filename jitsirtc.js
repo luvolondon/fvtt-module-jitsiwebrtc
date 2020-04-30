@@ -196,6 +196,7 @@ class JitsiRTCClient extends WebRTCInterface {
 		} else {
 			console.error("JITSI: track of unknown user " + participant);
 		}
+		console.warn("Jitsi: track type " + track.getType() + " add finished for " + participant);
 	}
 
 
@@ -261,23 +262,27 @@ class JitsiRTCClient extends WebRTCInterface {
 	
 			for (let i = 0; i <  tracks.length; i++) {		
 				stream.addTrack(tracks[i].track);	
-			}		
+			}	
+			console.warn("getStreamForUser " + userId);	
+			console.warn(tracks);
+			console.warn(stream.getVideoTracks());
 			return stream;
 
 		}
 		return this.getRemoteStreamForUserId(userId);
    }
 
-	_onLocalTracks(resolve,tracks) {
+	async _onLocalTracks(resolve,tracks) {
 		
 		for (let i = 0; i <  tracks.length; i++) {
 			const track = tracks[i];
 	
 			track.enabled = true;
 			track.track.enabled = true;
-			game.webrtc.client._roomhandle.addTrack(track);	
+			await game.webrtc.client._roomhandle.addTrack(track);	
 
-			console.warn("Jitsi: local track added " + track.getType());						
+			console.warn("Jitsi: local track added:");
+			console.warn(track);						
 
 			if (  (track.getType() === "audio") && 
 				(  (game.webrtc.settings.voiceMode === "ptt") || this.settings.users[game.user.id].muted)) {				
@@ -312,8 +317,9 @@ class JitsiRTCClient extends WebRTCInterface {
   }
  	
     assignStreamToVideo(stream, video) {
-		if (stream != null) {
-	console.warn("assignStreamToVideo");
+		console.warn("assignStreamToVideo");
+		console.warn(stream.getVideoTracks());
+		if ( stream && (stream.getVideoTracks().length > 0) ) {
 	console.warn(stream.getTracks());
 	
 			try {
@@ -513,7 +519,7 @@ console.warn("Video Track dispose");
 						}
 					},
 			})
-			.then(this._onLocalTracks.bind(this,resolve))
+			.then(await this._onLocalTracks.bind(this,resolve))
 			.catch(error => {
 				throw error;
 			});
@@ -676,8 +682,8 @@ Hooks.on("setup", function() {
   WebRTC.prototype.isStreamAudioEnabled = function(stream) { 
 	if (!stream) return false; 
 	
-    const tracks = stream.getAudioTracks();
-    return tracks.some(t => t.enabled);
+	const tracks = stream.getAudioTracks();
+	return tracks.some(t => t.enabled);
   };
   
 
