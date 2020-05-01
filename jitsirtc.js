@@ -219,7 +219,7 @@ class JitsiRTCClient extends WebRTCInterface {
 		
 		const participant = track.getParticipantId();
 		const client = game.webrtc.client;
-		this.debug("remote track type ",track.getType()," removed for participant ", participant);
+		client.debug("remote track type ",track.getType()," removed for participant ", participant);
 		
 		if (client._remoteTracks[participant] != null) {		
 
@@ -231,11 +231,11 @@ class JitsiRTCClient extends WebRTCInterface {
 			if (userId != null) { 
 					
 					if (track.getType() === "video") {
-						this.debug("onUserVideoStreamChange called after remote track removed for participant",participant);
+						client.debug("onUserVideoStreamChange called after remote track removed for participant",participant);
 						game.webrtc.onUserVideoStreamChange( userId,client.getRemoteStreamForId(participant));
 					}
 					if (track.getType() === "audio") {
-						this.debug("onUserAudioStreamChange called after remote track removed for participant",participant);
+						client.debug("onUserAudioStreamChange called after remote track removed for participant",participant);
 						game.webrtc.onUserAudioStreamChange( userId,client.getRemoteStreamForId(participant));
 					}					
 			}
@@ -665,7 +665,7 @@ class JitsiRTCClient extends WebRTCInterface {
 Hooks.on("init", function() {
   
   CONFIG["WebRTC"].clientClass = JitsiRTCClient;
-  CONFIG["debug"].avclient = false;
+  CONFIG["debug"].avclient = true;
 });
 
 Hooks.on("setup", function() {
