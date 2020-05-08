@@ -519,7 +519,8 @@ class JitsiRTCClient extends WebRTCInterface {
 			})
 			.then(await this._onLocalTracks.bind(this,resolve))
 			.catch(error => {
-				throw error;
+				this.debug("Failed to initialize stream: ", error);
+				resolve(null);
 			});
 		} else {
 			
