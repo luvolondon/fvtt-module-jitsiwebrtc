@@ -45,5 +45,5 @@ Fix by @bekit to detect failed local streams. thx!
 see https://github.com/luvolondon/fvtt-module-jitsiwebrtc/pull/10
 
 # License
-This Foundry VTT module, writen by Luvolondon, is licensed under a Creative Commons Attribution 4.0 International License.
+This Foundry VTT module, written by Luvolondon, is licensed under a Creative Commons Attribution 4.0 International License.
 
