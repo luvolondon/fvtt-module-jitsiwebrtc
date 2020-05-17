@@ -323,7 +323,7 @@ class JitsiRTCClient extends WebRTCInterface {
  	
     assignStreamToVideo(stream, video) {
 		this.debug("assignStreamToVideo stream:", stream, " video:", video);
-		if ( stream && (stream.getVideoTracks().length > 0) ) {
+		if (stream) {
 	
 			try {
 				video.srcObject = stream;
@@ -712,8 +712,8 @@ Hooks.on("setup", function() {
   WebRTC.prototype.onUserAudioStreamChange = function(userId, stream) {
 	const userSettings = this.settings.users[userId];
 
-	if (!userSettings.canBroadcastAudio) {
-		
+	if (userSettings.canBroadcastAudio) {
+		this.setVideoStream(userId, stream);
 		if (this.streamHasAudio(stream)) {
 		  const audioLevelHandler = this._onAudioLevel.bind(this, userId);
 		  game.audio.startLevelReports(userId, stream, audioLevelHandler, CONFIG.WebRTC.emitVolumeInterval);
