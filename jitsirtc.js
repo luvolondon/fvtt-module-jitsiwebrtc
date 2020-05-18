@@ -366,6 +366,7 @@ class JitsiRTCClient extends WebRTCInterface {
 		this.debug("conference joined: ", this._roomhandle);
 		this._roomhandle.setDisplayName(game.userId);
 
+		this._roomhandle.on(JitsiMeetJS.events.conference.CONFERENCE_ERROR , this._onConferenceError);
 		this._roomhandle.on(JitsiMeetJS.events.conference.TRACK_ADDED, this._onRemoteTrack);
 		this._roomhandle.on(JitsiMeetJS.events.conference.TRACK_REMOVED, this._onRemoteTrackRemove);
 		this._roomhandle.on(
@@ -388,6 +389,12 @@ class JitsiRTCClient extends WebRTCInterface {
 	  this.debug("conference joined event.");
 		resolve(true);
 	}
+
+  _onConferenceError(errorCode) {
+	this.debug("Conference error: ", errorCode);
+	this.webrtc.onError(errorCode);
+	resolve(false);
+  }
 
 	/**
    * Get the list of connected streams
