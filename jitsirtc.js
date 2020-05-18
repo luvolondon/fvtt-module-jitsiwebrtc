@@ -730,8 +730,6 @@ Hooks.on("setup", function() {
   WebRTC.prototype.onUserVideoStreamChange = function(userId, stream) {
     const userSettings = this.settings.users[userId];
     if (userSettings.canBroadcastVideo) {
-		this.setVideoStream(userId, stream);
-
 		if (userSettings.hidden) this.disableStreamVideo(stream);
 	}
 	game.webrtc.client.uiUpdateNeeded();
