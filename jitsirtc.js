@@ -323,8 +323,9 @@ class JitsiRTCClient extends WebRTCInterface {
  	
     assignStreamToVideo(stream, video) {
 		this.debug("assignStreamToVideo stream:", stream, " video:", video);
-		if ( stream && (stream.getVideoTracks().length > 0) ) {
-	
+		
+		if ( stream ) {			
+			
 			try {
 				video.srcObject = stream;
 			} catch (error) {
@@ -519,8 +520,7 @@ class JitsiRTCClient extends WebRTCInterface {
 			})
 			.then(await this._onLocalTracks.bind(this,resolve))
 			.catch(error => {
-				this.debug("Failed to initialize stream: ", error);
-				resolve(null);
+				throw error;
 			});
 		} else {
 			
@@ -712,7 +712,7 @@ Hooks.on("setup", function() {
   WebRTC.prototype.onUserAudioStreamChange = function(userId, stream) {
 	const userSettings = this.settings.users[userId];
 
-	if (!userSettings.canBroadcastAudio) {
+	if (userSettings.canBroadcastAudio) {
 		
 		if (this.streamHasAudio(stream)) {
 		  const audioLevelHandler = this._onAudioLevel.bind(this, userId);
@@ -737,7 +737,7 @@ Hooks.on("setup", function() {
 	game.webrtc.client.uiUpdateNeeded();
   }
   
-});
+}); 
 
 Hooks.on("ready", function() {
 	
