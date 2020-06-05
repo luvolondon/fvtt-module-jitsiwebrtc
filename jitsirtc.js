@@ -36,13 +36,13 @@ class JitsiRTCClient extends WebRTCInterface {
 	if (server["type"] == "FVTT") {
 		this._options = {
 			hosts: {
-				domain: 'beta.meet.jit.si',
-				muc: 'conference.beta.meet.jit.si'				
+				domain: 'meet.jit.si',
+				muc: 'conference.meet.jit.si'
 			},
-			bosh: '//beta.meet.jit.si/http-bind',
-			clientNode: 'http://beta.meet.jit.si'			
-		};		
-		this._auth = {}		
+			bosh: '//meet.jit.si/http-bind',
+			clientNode: 'http://meet.jit.si'
+		};
+		this._auth = {}
 	} else {
 		this._options = {
 			hosts: {
@@ -52,13 +52,11 @@ class JitsiRTCClient extends WebRTCInterface {
 			},
 			bosh: '//' + server["url"] + '/http-bind',
 			clientNode: 'http://jitsi.org/jitsimeet',
-			
 		};
 		this._auth = {
 			id: server["username"],
 			password: server["password"]
 		}
-		
 	}
     
     this._usernameCache = {};
