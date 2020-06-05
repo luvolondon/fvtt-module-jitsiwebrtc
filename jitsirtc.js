@@ -290,6 +290,8 @@ class JitsiRTCClient extends WebRTCInterface {
 			if (  (track.getType() === "audio") && 
 				(  (game.webrtc.settings.voiceMode === "ptt") || this.settings.users[game.user.id].muted)) {				
 				game.webrtc.disableStreamAudio(this.getStreamForUser(game.userId));
+			} else if ((track.getType() === "video") && (this.settings.users[game.user.id].hidden)) {
+				game.webrtc.disableStreamVideo(this.getStreamForUser(game.userId));
 			}
 
 		}
