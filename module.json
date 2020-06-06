@@ -3,7 +3,7 @@
   "title": "Jitsi WebRTC client",
   "description": "Use Jitsi to handle A/V. Connect to jitsi.org or self-hosted server.",
   "author": "Luvolondon",
-  "version": "0.2.21",
+  "version": "0.2.22",
   "styles": [],
   "packs": [],
   "url": "https://github.com/luvolondon/fvtt-module-jitsiwebrtc",
