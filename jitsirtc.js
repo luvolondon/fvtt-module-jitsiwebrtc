@@ -36,13 +36,13 @@ class JitsiRTCClient extends WebRTCInterface {
 	if (server["type"] == "FVTT") {
 		this._options = {
 			hosts: {
-				domain: 'beta.meet.jit.si',
-				muc: 'conference.beta.meet.jit.si'				
+				domain: 'meet.jit.si',
+				muc: 'conference.meet.jit.si'
 			},
-			bosh: '//beta.meet.jit.si/http-bind',
-			clientNode: 'http://beta.meet.jit.si'			
-		};		
-		this._auth = {}		
+			bosh: '//meet.jit.si/http-bind',
+			clientNode: 'http://meet.jit.si'
+		};
+		this._auth = {}
 	} else {
 		mucUrl = game.settings.get('jitsiwebrtc', 'mucUrl')
 		focusUrl = game.settings.get('jitsiwebrtc', 'focusUrl')
@@ -75,7 +75,6 @@ class JitsiRTCClient extends WebRTCInterface {
 			id: server["username"],
 			password: server["password"]
 		}
-		
 	}
     
     this._usernameCache = {};
@@ -309,6 +308,8 @@ class JitsiRTCClient extends WebRTCInterface {
 			if (  (track.getType() === "audio") && 
 				(  (game.webrtc.settings.voiceMode === "ptt") || this.settings.users[game.user.id].muted)) {				
 				game.webrtc.disableStreamAudio(this.getStreamForUser(game.userId));
+			} else if ((track.getType() === "video") && (this.settings.users[game.user.id].hidden)) {
+				game.webrtc.disableStreamVideo(this.getStreamForUser(game.userId));
 			}
 
 		}
@@ -383,6 +384,7 @@ class JitsiRTCClient extends WebRTCInterface {
 		this.debug("conference joined: ", this._roomhandle);
 		this._roomhandle.setDisplayName(game.userId);
 
+		this._roomhandle.on(JitsiMeetJS.events.conference.CONFERENCE_ERROR , this._onConferenceError);
 		this._roomhandle.on(JitsiMeetJS.events.conference.TRACK_ADDED, this._onRemoteTrack);
 		this._roomhandle.on(JitsiMeetJS.events.conference.TRACK_REMOVED, this._onRemoteTrackRemove);
 		this._roomhandle.on(
@@ -405,6 +407,12 @@ class JitsiRTCClient extends WebRTCInterface {
 	  this.debug("conference joined event.");
 		resolve(true);
 	}
+
+  _onConferenceError(errorCode) {
+	this.debug("Conference error: ", errorCode);
+	this.webrtc.onError(errorCode);
+	resolve(false);
+  }
 
 	/**
    * Get the list of connected streams
@@ -768,8 +776,6 @@ Hooks.on("setup", function() {
   WebRTC.prototype.onUserVideoStreamChange = function(userId, stream) {
     const userSettings = this.settings.users[userId];
     if (userSettings.canBroadcastVideo) {
-		this.setVideoStream(userId, stream);
-
 		if (userSettings.hidden) this.disableStreamVideo(stream);
 	}
 	game.webrtc.client.uiUpdateNeeded();
