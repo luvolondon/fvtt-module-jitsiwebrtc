@@ -44,22 +44,22 @@ class JitsiRTCClient extends WebRTCInterface {
 		};
 		this._auth = {}
 	} else {
-		var mucUrl = game.settings.get('jitsiwebrtc', 'mucUrl')
-		var focusUrl = game.settings.get('jitsiwebrtc', 'focusUrl')
-		var boshUrl = game.settings.get('jitsiwebrtc', 'boshUrl')
+		var mucUrl = game.settings.get('jitsiwebrtc', 'mucUrl');
+		var focusUrl = game.settings.get('jitsiwebrtc', 'focusUrl');
+		var boshUrl = game.settings.get('jitsiwebrtc', 'boshUrl');
 
 		// Setup defaults if undefined
 		if (mucUrl === '' || mucUrl === 'undefined') {
-			mucUrl = 'conference.' + server["url"] 
-			game.settings.set('jitsiwebrtc', 'mucUrl', mucUrl)
+			mucUrl = 'conference.' + server["url"]
+			game.settings.set('jitsiwebrtc', 'mucUrl', mucUrl);
 		}
 		if (focusUrl === '' || focusUrl === 'undefined') {
-			focusUrl = 'focus.' + server["url"] 
-			game.settings.set('jitsiwebrtc', 'focusUrl', focusUrl)
+			focusUrl = 'focus.' + server["url"]
+			game.settings.set('jitsiwebrtc', 'focusUrl', focusUrl);
 		}
 		if (boshUrl === '' || boshUrl === 'undefined') {
 			boshUrl = '//' + server["url"] + '/http-bind'
-			game.settings.set('jitsiwebrtc', 'boshUrl', boshUrl)
+			game.settings.set('jitsiwebrtc', 'boshUrl', boshUrl);
 		}
 
 		this._options = {
@@ -698,6 +698,7 @@ Hooks.on("init", function() {
 	scope: 'world',
 	type: String,
 	config: true,
+	onChange: () => window.location.reload(),
   });
   game.settings.register('jitsiwebrtc', 'focusUrl', {
 	name: 'Jitsi Focus URL',
@@ -706,6 +707,7 @@ Hooks.on("init", function() {
 	scope: 'world',
 	type: String,
 	config: true,
+	onChange: () => window.location.reload(),
   });
   game.settings.register('jitsiwebrtc', 'boshUrl', {
 	name: 'Jitsi Bosh URL',
@@ -714,6 +716,7 @@ Hooks.on("init", function() {
 	scope: 'world',
 	type: String,
 	config: true,
+	onChange: () => window.location.reload(),
   });
 });
 
