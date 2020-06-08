@@ -44,15 +44,32 @@ class JitsiRTCClient extends WebRTCInterface {
 		};		
 		this._auth = {}		
 	} else {
+		mucUrl = game.settings.get('jitsiwebrtc', 'mucUrl')
+		focusUrl = game.settings.get('jitsiwebrtc', 'focusUrl')
+		boshUrl = game.settings.get('jitsiwebrtc', 'boshUrl')
+
+		// Setup defaults if undefined
+		if (mucUrl === 'undefined') {
+			mucUrl = 'conference.' + server["url"] 
+			game.settings.set('jitsiwebrtc', 'mucUrl', mucUrl)
+		}
+		if (focusUrl === 'undefined') {
+			focusUrl = 'focus.' + server["url"] 
+			game.settings.set('jitsiwebrtc', 'focusUrl', focusUrl)
+		}
+		if (boshUrl === 'undefined') {
+			boshUrl = '//' + server["url"] + '/http-bind'
+			game.settings.set('jitsiwebrtc', 'boshUrl', boshUrl)
+		}
+
 		this._options = {
 			hosts: {
 				domain: server["url"],
-				muc: 'conference.' + server["url"],
-				focus: 'focus.' + server["url"]
+				muc: mucUrl,
+				focus: focusUrl,
 			},
-			bosh: '//' + server["url"] + '/http-bind',
+			bosh: boshUrl,
 			clientNode: 'http://jitsi.org/jitsimeet',
-			
 		};
 		this._auth = {
 			id: server["username"],
@@ -664,9 +681,30 @@ class JitsiRTCClient extends WebRTCInterface {
 }
 
 Hooks.on("init", function() {
-  
   CONFIG["WebRTC"].clientClass = JitsiRTCClient;
   CONFIG["debug"].avclient = true;
+  const server = game.settings["worldSettings"]["server"];
+  game.settings.register('jitsiwebrtc', 'mucUrl', {
+	name: 'Jitsi MUC URL',
+	hint: 'config["hosts"]["muc"] in jitsi-meet config.js',
+	scope: 'world',
+	type: String,
+	config: true,
+  });
+  game.settings.register('jitsiwebrtc', 'focusUrl', {
+	name: 'Jitsi Focus URL',
+	hint: 'config["hosts"]["focus"] in jitsi-meet config.js',
+	scope: 'world',
+	type: String,
+	config: true,
+  });
+  game.settings.register('jitsiwebrtc', 'boshUrl', {
+	name: 'Jitsi Bosh URL',
+	hint: 'config["bosh"] in jitsi-meet config.js',
+	scope: 'world',
+	type: String,
+	config: true,
+  });
 });
 
 Hooks.on("setup", function() {
