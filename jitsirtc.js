@@ -44,13 +44,31 @@ class JitsiRTCClient extends WebRTCInterface {
 		};
 		this._auth = {}
 	} else {
+		var mucUrl = game.settings.get('jitsiwebrtc', 'mucUrl');
+		var focusUrl = game.settings.get('jitsiwebrtc', 'focusUrl');
+		var boshUrl = game.settings.get('jitsiwebrtc', 'boshUrl');
+
+		// Setup defaults if undefined
+		if (mucUrl === '' || mucUrl === 'undefined') {
+			mucUrl = 'conference.' + server["url"]
+			game.settings.set('jitsiwebrtc', 'mucUrl', mucUrl);
+		}
+		if (focusUrl === '' || focusUrl === 'undefined') {
+			focusUrl = 'focus.' + server["url"]
+			game.settings.set('jitsiwebrtc', 'focusUrl', focusUrl);
+		}
+		if (boshUrl === '' || boshUrl === 'undefined') {
+			boshUrl = '//' + server["url"] + '/http-bind'
+			game.settings.set('jitsiwebrtc', 'boshUrl', boshUrl);
+		}
+
 		this._options = {
 			hosts: {
 				domain: server["url"],
-				muc: 'conference.' + server["url"],
-				focus: 'focus.' + server["url"]
+				muc: mucUrl,
+				focus: focusUrl,
 			},
-			bosh: '//' + server["url"] + '/http-bind',
+			bosh: boshUrl,
 			clientNode: 'http://jitsi.org/jitsimeet',
 		};
 		this._auth = {
@@ -671,9 +689,35 @@ class JitsiRTCClient extends WebRTCInterface {
 }
 
 Hooks.on("init", function() {
-  
   CONFIG["WebRTC"].clientClass = JitsiRTCClient;
   CONFIG["debug"].avclient = true;
+  game.settings.register('jitsiwebrtc', 'mucUrl', {
+	name: 'Jitsi MUC URL',
+	hint: 'config["hosts"]["muc"] in jitsi-meet config.js',
+	default: '',
+	scope: 'world',
+	type: String,
+	config: true,
+	onChange: () => window.location.reload(),
+  });
+  game.settings.register('jitsiwebrtc', 'focusUrl', {
+	name: 'Jitsi Focus URL',
+	hint: 'config["hosts"]["focus"] in jitsi-meet config.js',
+	default: '',
+	scope: 'world',
+	type: String,
+	config: true,
+	onChange: () => window.location.reload(),
+  });
+  game.settings.register('jitsiwebrtc', 'boshUrl', {
+	name: 'Jitsi Bosh URL',
+	hint: 'config["bosh"] in jitsi-meet config.js',
+	default: '',
+	scope: 'world',
+	type: String,
+	config: true,
+	onChange: () => window.location.reload(),
+  });
 });
 
 Hooks.on("setup", function() {
@@ -745,8 +789,6 @@ Hooks.on("setup", function() {
 }); 
 
 Hooks.on("ready", function() {
-	
-
 	game.webrtc = new JitsiWebRTC(new WebRTCSettings());	
 	
 	let roomid = game.webrtc.settings.getWorldSetting("server.room");
