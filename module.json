@@ -3,13 +3,13 @@
   "title": "Jitsi WebRTC client",
   "description": "Use Jitsi to handle A/V. Connect to jitsi.org or self-hosted server.",
   "author": "Luvolondon",
-  "version": "0.2.26",
+  "version": "0.2.27",
   "styles": [],
   "packs": [],
   "url": "https://github.com/luvolondon/fvtt-module-jitsiwebrtc",
   "manifest": "https://raw.githubusercontent.com/luvolondon/fvtt-module-jitsiwebrtc/master/module.json",
-  "download": "https://github.com/luvolondon/fvtt-module-jitsiwebrtc/archive/v0.2.26.zip",
+  "download": "https://github.com/luvolondon/fvtt-module-jitsiwebrtc/archive/v0.2.27.zip",
   "minimumCoreVersion": "0.5.5",
-  "compatibleCoreVersion": "0.6.2",
+  "compatibleCoreVersion": "0.6.4",
   "scripts": ["jitsirtc.js", "lib-jitsi-meet.min.js"]
 }
