@@ -322,9 +322,9 @@ class JitsiRTCClient extends WebRTCInterface {
 
   _onUserLeft(id) {
     this.debug('user left: ', game.webrtc.client._idCache[id]);
-    game.webrtc.client._remoteTracks[id] = null;
-    game.webrtc.client._usernameCache[game.webrtc.client._idCache[id]] = null;
-    game.webrtc.client._idCache[id] = null;
+    delete game.webrtc.client._remoteTracks[id];
+    delete game.webrtc.client._usernameCache[game.webrtc.client._idCache[id]];
+    delete game.webrtc.client._idCache[id];
 
     game.webrtc.onUserStreamChange(game.webrtc.client._idCache[id], null);
   }
