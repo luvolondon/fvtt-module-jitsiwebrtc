@@ -73,6 +73,7 @@ class JitsiRTCClient extends WebRTCInterface {
 
     this._usernameCache = {};
     this._idCache = {};
+    this._externalUserCache = {};
     this._withAudio = false;
     this._withVideo = false;
   }
@@ -322,9 +323,15 @@ class JitsiRTCClient extends WebRTCInterface {
 
   _onUserLeft(id) {
     this.debug('user left: ', game.webrtc.client._idCache[id]);
-    game.webrtc.client._remoteTracks[id] = null;
-    game.webrtc.client._usernameCache[game.webrtc.client._idCache[id]] = null;
-    game.webrtc.client._idCache[id] = null;
+    delete game.webrtc.client._remoteTracks[id];
+    delete game.webrtc.client._usernameCache[game.webrtc.client._idCache[id]];
+    delete game.webrtc.client._idCache[id];
+
+    // Remove the temporary user entity if they are an external Jitsi user
+    if (game.webrtc.client._externalUserCache[id]) {
+      delete game.webrtc.client._externalUserCache[id];
+      game.users.delete(id);
+    }
 
     game.webrtc.onUserStreamChange(game.webrtc.client._idCache[id], null);
   }
@@ -355,15 +362,53 @@ class JitsiRTCClient extends WebRTCInterface {
     );
 
     this._roomhandle.on(JitsiMeetJS.events.conference.USER_JOINED, (id, participant) => {
-      game.webrtc.client._usernameCache[participant._displayName] = id;
-      game.webrtc.client._idCache[id] = participant._displayName;
+      let displayName = participant._displayName;
+
+      // Handle Jitsi users who join the meeting directly
+      if (!game.users.entities.find((u) => u.id === displayName)) {
+        // Save the Jitsi display name into an external users cache
+        game.webrtc.client._externalUserCache[id] = displayName || 'Jitsi User';
+
+        // Set the stored user name equal to the Jitsi ID
+        displayName = id;
+
+        // Add the external user as a temporary user entity
+        if (game.settings.get('jitsiwebrtc', 'allowExternalUsers')) {
+          this._addExternalUserData(id);
+        }
+      }
+
+      game.webrtc.client._usernameCache[displayName] = id;
+      game.webrtc.client._idCache[id] = displayName;
       game.webrtc.client._remoteTracks[id] = [];
-      this.debug('user joined: ', participant._displayName);
+      this.debug('user joined: ', displayName);
     });
 
     this._roomhandle.on(JitsiMeetJS.events.conference.USER_LEFT, this._onUserLeft.bind(this));
 
     this._roomhandle.join();
+  }
+
+  _addExternalUserData(id) {
+    this.debug('Adding external Jitsi user: ', id);
+
+    // Create user data for the external user
+    const data = {
+      _id: id,
+      active: true,
+      password: '',
+      role: CONST.USER_ROLES.NONE,
+      permissions: {},
+      avatar: CONST.DEFAULT_TOKEN,
+      character: '',
+      color: '#ffffff',
+      flags: {},
+      name: game.webrtc.client._externalUserCache[id],
+    };
+
+    // Add the external user as a tempoary user entity
+    const externalUser = new User(data);
+    game.users.insert(externalUser);
   }
 
   _onConferenceJoined(resolve) {
@@ -641,6 +686,15 @@ class JitsiRTCClient extends WebRTCInterface {
 Hooks.on('init', () => {
   CONFIG.WebRTC.clientClass = JitsiRTCClient;
   CONFIG.debug.avclient = true;
+  game.settings.register('jitsiwebrtc', 'allowExternalUsers', {
+    name: 'Allow standalone Jitsi users',
+    hint: 'If a user joins the Jitsi meeting outside of FVTT, show them to players in the FVTT interface',
+    scope: 'world',
+    config: true,
+    default: false,
+    type: Boolean,
+    onChange: () => window.location.reload(),
+  });
   game.settings.register('jitsiwebrtc', 'mucUrl', {
     name: 'Jitsi MUC URL',
     hint: 'config["hosts"]["muc"] in jitsi-meet config.js',
