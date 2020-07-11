@@ -51,6 +51,8 @@ see https://github.com/luvolondon/fvtt-module-jitsiwebrtc/pull/15
 v0.2.27
 Updated compatibleCoreVersion to 0.6.4, copied files from linting-cleanup branch created by @bekit (thx!)
 
+v0.2.28 Another great addition to the module be @bekit, now users that directly connect to the Jitsi server are added to the game as temporary A/V users. Very handy for players without A/V on the desktop who need to usse their mobile phone for A/V.
+
 # License
 This Foundry VTT module, written by Luvolondon, is licensed under a Creative Commons Attribution 4.0 International License.
 
