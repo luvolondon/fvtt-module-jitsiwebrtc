@@ -16,6 +16,7 @@ To use this client you have to enable A/V in the Game settings. The module will 
 You can either connect via the Jitsi server by leaving the Signalling Server on "Foundry VTT". Or switch to a custom, self-hosted Jitsi server. A great documentation by @solfolango77 for installing your own server can be found here: https://www.vttassets.com/articles/installing-a-self-hosted-jitsi-server-to-use-with-foundry-vtt
 
 Thx to this addition by [@bekriebel](https://github.com/bekriebel)
+
 https://github.com/luvolondon/fvtt-module-jitsiwebrtc/pull/19
 users can now join the A/V part by directly connecting to the Jitsi server. These users show up as temporary extra users in-game.
 	
@@ -44,18 +45,18 @@ v0.2.11
 Cleanup of variables for book-keeping of local and remote tracks. Now user-blocking of audio and video is possible. More robust against reloads/changes coming from the clients.
 
 v0.2.17
-Fix by @bekit to detect failed local streams. thx!
+Fix by [@bekriebel](https://github.com/bekriebel) to detect failed local streams. thx!
 see https://github.com/luvolondon/fvtt-module-jitsiwebrtc/pull/10
 
 v0.2.22
-Multiple fixes by @bekit, thx!
+Multiple fixes by [@bekriebel](https://github.com/bekriebel), thx!
 see https://github.com/luvolondon/fvtt-module-jitsiwebrtc/pull/15
 
 v0.2.27
-Updated compatibleCoreVersion to 0.6.4, copied files from linting-cleanup branch created by @bekit (thx!)
+Updated compatibleCoreVersion to 0.6.4, copied files from linting-cleanup branch created by [@bekriebel](https://github.com/bekriebel) (thx!)
 
 v0.2.28 
-Another great addition to the module be @bekit, now users that directly connect to the Jitsi server are added to the game as temporary A/V users. Very handy for players without A/V on the desktop who need to usse their mobile phone for A/V.
+Another great addition to the module be [@bekriebel](https://github.com/bekriebel), now users that directly connect to the Jitsi server are added to the game as temporary A/V users. Very handy for players without A/V on the desktop who need to usse their mobile phone for A/V.
 
 # License
 This Foundry VTT module, written by Luvolondon, is licensed under a Creative Commons Attribution 4.0 International License.
