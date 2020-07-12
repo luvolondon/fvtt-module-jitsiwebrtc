@@ -15,6 +15,9 @@ You can install this module by using the following manifest URL : https://raw.gi
 To use this client you have to enable A/V in the Game settings. The module will replace the easyrtc client of vanilla FVTT.
 You can either connect via the Jitsi server by leaving the Signalling Server on "Foundry VTT". Or switch to a custom, self-hosted Jitsi server. A great documentation by @solfolango77 for installing your own server can be found here: https://www.vttassets.com/articles/installing-a-self-hosted-jitsi-server-to-use-with-foundry-vtt
 
+# Important
+If you test your own Jitsi server with two users, the standard setup will connect these users in a Peer-to-peer way without using the Jitsi bridge. This switches if a third user connects. This module _always_ initiates a Jitsi connection in bridge mode and even with two players never does peer2peer. Keep this in mind when testing.
+
 Thx to this addition by [@bekriebel](https://github.com/bekriebel)
 
 https://github.com/luvolondon/fvtt-module-jitsiwebrtc/pull/19
