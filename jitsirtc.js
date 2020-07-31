@@ -38,22 +38,22 @@ class JitsiRTCClient extends WebRTCInterface {
       };
       this._auth = {};
     } else {
-      let mucUrl = game.settings.get('jitsiwebrtc', 'mucUrl');
-      let focusUrl = game.settings.get('jitsiwebrtc', 'focusUrl');
-      let boshUrl = game.settings.get('jitsiwebrtc', 'boshUrl');
+      let mucUrl = game.settings.get('jitsirtc', 'mucUrl');
+      let focusUrl = game.settings.get('jitsirtc', 'focusUrl');
+      let boshUrl = game.settings.get('jitsirtc', 'boshUrl');
 
       // Setup defaults if undefined
       if (mucUrl === '' || mucUrl === 'undefined') {
         mucUrl = `conference.${server.url}`;
-        game.settings.set('jitsiwebrtc', 'mucUrl', mucUrl);
+        game.settings.set('jitsirtc', 'mucUrl', mucUrl);
       }
       if (focusUrl === '' || focusUrl === 'undefined') {
         focusUrl = `focus.${server.url}`;
-        game.settings.set('jitsiwebrtc', 'focusUrl', focusUrl);
+        game.settings.set('jitsirtc', 'focusUrl', focusUrl);
       }
       if (boshUrl === '' || boshUrl === 'undefined') {
         boshUrl = `//${server.url}/http-bind`;
-        game.settings.set('jitsiwebrtc', 'boshUrl', boshUrl);
+        game.settings.set('jitsirtc', 'boshUrl', boshUrl);
       }
 
       this._options = {
@@ -373,7 +373,7 @@ class JitsiRTCClient extends WebRTCInterface {
         displayName = id;
 
         // Add the external user as a temporary user entity
-        if (game.settings.get('jitsiwebrtc', 'allowExternalUsers')) {
+        if (game.settings.get('jitsirtc', 'allowExternalUsers')) {
           this._addExternalUserData(id);
         }
       }
@@ -686,7 +686,7 @@ class JitsiRTCClient extends WebRTCInterface {
 Hooks.on('init', () => {
   CONFIG.WebRTC.clientClass = JitsiRTCClient;
   CONFIG.debug.avclient = true;
-  game.settings.register('jitsiwebrtc', 'allowExternalUsers', {
+  game.settings.register('jitsirtc', 'allowExternalUsers', {
     name: 'Allow standalone Jitsi users',
     hint: 'If a user joins the Jitsi meeting outside of FVTT, show them to players in the FVTT interface',
     scope: 'world',
@@ -695,7 +695,7 @@ Hooks.on('init', () => {
     type: Boolean,
     onChange: () => window.location.reload(),
   });
-  game.settings.register('jitsiwebrtc', 'mucUrl', {
+  game.settings.register('jitsirtc', 'mucUrl', {
     name: 'Jitsi MUC URL',
     hint: 'config["hosts"]["muc"] in jitsi-meet config.js',
     default: '',
@@ -704,7 +704,7 @@ Hooks.on('init', () => {
     config: true,
     onChange: () => window.location.reload(),
   });
-  game.settings.register('jitsiwebrtc', 'focusUrl', {
+  game.settings.register('jitsirtc', 'focusUrl', {
     name: 'Jitsi Focus URL',
     hint: 'config["hosts"]["focus"] in jitsi-meet config.js',
     default: '',
@@ -713,7 +713,7 @@ Hooks.on('init', () => {
     config: true,
     onChange: () => window.location.reload(),
   });
-  game.settings.register('jitsiwebrtc', 'boshUrl', {
+  game.settings.register('jitsirtc', 'boshUrl', {
     name: 'Jitsi Bosh URL',
     hint: 'config["bosh"] in jitsi-meet config.js',
     default: '',
