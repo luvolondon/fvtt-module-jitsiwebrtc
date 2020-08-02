@@ -75,7 +75,7 @@ class JitsiRTCClient extends WebRTCInterface {
    * @param {...*} args      Arguments to console.log
    */
   debug(...args) {
-    if (this.settings.debugClient) console.log('JitsiRTC : ', ...args);
+    if (this.settings.debugClient) console.log('JitsiRTC | ', ...args);
   }
 
   getLocalTracks() {
@@ -694,7 +694,6 @@ class JitsiRTCClient extends WebRTCInterface {
 
 Hooks.on('init', () => {
   CONFIG.WebRTC.clientClass = JitsiRTCClient;
-  CONFIG.debug.avclient = true;
   game.settings.register('jitsirtc', 'allowExternalUsers', {
     name: 'Allow standalone Jitsi users',
     hint: 'If a user joins the Jitsi meeting outside of FVTT, show them to players in the FVTT interface',
@@ -740,6 +739,24 @@ Hooks.on('init', () => {
     config: game.settings.get('jitsirtc', 'customUrls'),
     onChange: () => window.location.reload(),
   });
+  game.settings.register('jitsirtc', 'debug', {
+    name: 'Enable debug logging',
+    hint: 'Enables CONFIG.debug.av and CONFIG.debug.avclient for extra logging',
+    scope: 'world',
+    config: false,
+    default: false,
+    type: Boolean,
+    onChange: (value) => {
+      CONFIG.debug.av = value;
+      CONFIG.debug.avclient = value;
+    },
+  });
+
+  // Enable debug logging if hidden debug setting is true
+  if (game.settings.get('jitsirtc', 'debug')) {
+    CONFIG.debug.av = true;
+    CONFIG.debug.avclient = true;
+  }
 });
 
 Hooks.on('setup', () => {
