@@ -14,6 +14,7 @@ class JitsiRTCClient extends WebRTCInterface {
     this._roomhandle = null;
     this._remoteTracks = {};
     this._streams = {};
+    this._controlStream = new MediaStream();
     this._videofilter = null;
 
     this._settings = settings;
@@ -248,7 +249,8 @@ class JitsiRTCClient extends WebRTCInterface {
 
     // Wait for all tracks to be added
     await Promise.all(addedTracks);
-    this._streams[game.userId] = stream;
+    this._controlStream = stream;
+    this._streams[game.userId] = stream.clone();
     resolve(this.getStreamForUser(game.userId));
   }
 
@@ -391,7 +393,7 @@ class JitsiRTCClient extends WebRTCInterface {
    * @return {Array.Object}
    */
   getConnectedStreams() {
-    const localStream = game.webrtc.client.getStreamForUser(game.userId);
+    const localStream = this._controlStream;
     const connectedStreams = [];
 
     Object.keys(game.webrtc.client._usernameCache).forEach((userName) => {
@@ -730,22 +732,6 @@ Hooks.on('init', () => {
     CONFIG.debug.av = true;
     CONFIG.debug.avclient = true;
   }
-});
-
-Hooks.on('setup', () => {
-  /**
-   * Checks if a stream has any audio tracks enabled
-   * @param {MediaStream} stream    The stream to check
-   * @return {Boolean}
-   */
-  WebRTC.prototype.isStreamAudioEnabled = function isStreamAudioEnabled(stream) {
-    if (stream === this.client.getStreamForUser(game.user.id)) {
-      return !this.settings.users[game.user.id].muted;
-    }
-
-    const tracks = stream ? stream.getAudioTracks() : [];
-    return tracks.some((t) => t.enabled);
-  };
 });
 
 Hooks.on('ready', () => {
