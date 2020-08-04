@@ -334,6 +334,9 @@ class JitsiRTCClient extends WebRTCInterface {
         // Add the external user as a temporary user entity
         if (game.settings.get('jitsirtc', 'allowExternalUsers')) {
           this._addExternalUserData(id);
+        } else {
+          // Kick the user
+          this._roomhandle.kickParticipant(id);
         }
       }
 
