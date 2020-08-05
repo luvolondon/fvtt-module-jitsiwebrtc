@@ -248,8 +248,24 @@ class JitsiRTCClient extends WebRTCInterface {
     resolve(this.getStreamForUser(game.userId));
   }
 
-  setAudioOutput() {
-    this.debug('setAudioOutput not implemented');
+  setAudioOutput(element, sinkId) {
+    if (typeof element.sinkId !== 'undefined') {
+      element.setSinkId(sinkId)
+        .then(() => {
+          this.debug(`Success, audio output device attached: ${sinkId} to `
+             + `element with ${element.title} as source.`);
+        })
+        .catch((error) => {
+          let errorMessage = error;
+          if (error.name === 'SecurityError') {
+            errorMessage = `${'You need to use HTTPS for selecting audio output '
+               + 'device: '}${error}`;
+          }
+          this.debug(errorMessage);
+        });
+    } else {
+      this.debug('Browser does not support output device selection.');
+    }
   }
 
   assignStreamToVideo(stream, video) {
