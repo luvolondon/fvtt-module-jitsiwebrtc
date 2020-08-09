@@ -1,5 +1,3 @@
-let jitsirtc = null;
-
 /**
  * WebRTC Client using the JitsiRTC framework for its implementation.
  *
@@ -11,16 +9,19 @@ class JitsiRTCClient extends WebRTCInterface {
   constructor(webrtc, settings) {
     super(webrtc, settings);
 
+    this._jitsiConnection = null;
     this._settings = settings;
     this._controlStream = new MediaStream();
     this._roomhandle = null;
-    this._videofilter = null;
     this._room = null;
     this._remoteTracks = {};
     this._streams = {};
     this._usernameCache = {};
     this._idCache = {};
     this._externalUserCache = {};
+    this._loginSuccessHandler = null;
+    this._loginFailureHandler = null;
+    this._onDisconnectHandler = null;
   }
 
   /**
@@ -33,27 +34,6 @@ class JitsiRTCClient extends WebRTCInterface {
 
   getLocalTracks() {
     if (this._roomhandle) return this._roomhandle.getLocalTracks();
-    return [];
-  }
-
-  getFilterCanvas() {
-    if (this._videofilter) return this._videofilter.getFilterCanvas();
-    return null;
-  }
-
-  hasActiveFilter() {
-    if (this._videofilter) return this._videofilter.hasActiveFilter();
-
-    return false;
-  }
-
-  setVideoFilter(filter) {
-    this._videofilter = filter;
-  }
-
-  async getVideoFilter() {
-    if (this._videofilter) return this._videofilter.getVideoFilter();
-
     return [];
   }
 
@@ -74,8 +54,6 @@ class JitsiRTCClient extends WebRTCInterface {
    * @return {Promise.boolean}       Returns success/failure to connect
    */
   async connect(connectionOptions) {
-    await this.disconnect();
-
     let options = {};
     let auth = {};
 
@@ -118,26 +96,31 @@ class JitsiRTCClient extends WebRTCInterface {
         };
       }
 
-      jitsirtc = new JitsiMeetJS.JitsiConnection(null, null, options);
+      this._jitsiConnection = new JitsiMeetJS.JitsiConnection(null, null, options);
 
       this.debug('Connection created with options:', options);
 
-      jitsirtc.addEventListener(
+      this._loginSuccessHandler = this._loginSuccess.bind(this, resolve);
+      this._jitsiConnection.addEventListener(
         JitsiMeetJS.events.connection.CONNECTION_ESTABLISHED,
-        this._loginSuccess.bind(this, resolve),
+        this._loginSuccessHandler,
       );
-      jitsirtc.addEventListener(
+
+      this._loginFailureHandler = this._loginFailure.bind(this, resolve);
+      this._jitsiConnection.addEventListener(
         JitsiMeetJS.events.connection.CONNECTION_FAILED,
-        this._loginFailure.bind(this, resolve),
+        this._loginFailureHandler,
       );
-      jitsirtc.addEventListener(
+
+      this._onDisconnectHandler = this._onDisconnect;
+      this._jitsiConnection.addEventListener(
         JitsiMeetJS.events.connection.CONNECTION_DISCONNECTED,
-        this._onDisconnect.bind(this, resolve),
+        this._onDisconnectHandler,
       );
 
       this._room = this.settings.serverRoom;
       this.debug('Meeting room name: ', this._room);
-      jitsirtc.connect(auth);
+      this._jitsiConnection.connect(auth);
 
       this.debug('Async call to connect started.');
     });
@@ -164,9 +147,11 @@ class JitsiRTCClient extends WebRTCInterface {
     const participant = track.getParticipantId();
     const { client } = game.webrtc;
 
-    client.debug('remote track type ', track.getType(), ' from participant ', participant, ' added.');
+    client.debug('remote track type ', track.getType(), ' added for participant ', participant);
 
-    if (client._remoteTracks[participant] == null) client._remoteTracks[participant] = [];
+    if (!client._remoteTracks[participant]) {
+      client._remoteTracks[participant] = [];
+    }
 
     client._remoteTracks[participant].push(track);
     const userId = client._idCache[participant];
@@ -190,9 +175,9 @@ class JitsiRTCClient extends WebRTCInterface {
     if (track.isLocal()) {
       return;
     }
-
     const participant = track.getParticipantId();
     const { client } = game.webrtc;
+
     client.debug('remote track type ', track.getType(), ' removed for participant ', participant);
 
     if (client._remoteTracks[participant] != null) {
@@ -279,10 +264,6 @@ class JitsiRTCClient extends WebRTCInterface {
       } catch (error) {
         streamVideo.src = window.URL.createObjectURL(stream);
       }
-
-      if (game.webrtc.client.hasActiveFilter() && $(video).hasClass('local-camera')) {
-        $(video).parent().append(game.webrtc.client.getFilterCanvas());
-      }
     }
   }
 
@@ -312,7 +293,7 @@ class JitsiRTCClient extends WebRTCInterface {
    * @private
    */
   _loginSuccess(resolve) {
-    this._roomhandle = jitsirtc.initJitsiConference(this._room, {
+    this._roomhandle = this._jitsiConnection.initJitsiConference(this._room, {
       openBridgeChannel: true,
       startSilent: false,
       p2p: {
@@ -443,30 +424,36 @@ class JitsiRTCClient extends WebRTCInterface {
    * @return {Promise.boolean}       Returns success/failure to connect
    */
   async disconnect() {
-    if (jitsirtc) {
-      return new Promise((resolve) => {
-        jitsirtc.removeEventListener(
-          JitsiMeetJS.events.connection.CONNECTION_ESTABLISHED,
-          this._loginSuccess.bind(this, resolve),
-        );
-        jitsirtc.removeEventListener(
-          JitsiMeetJS.events.connection.CONNECTION_FAILED,
-          this._loginFailure.bind(this, resolve),
-        );
-        jitsirtc.removeEventListener(
-          JitsiMeetJS.events.connection.CONNECTION_DISCONNECTED,
-          this._onDisconnect.bind(this),
-        );
-
-        jitsirtc.disconnect();
-      });
+    if (this._roomhandle) {
+      try {
+        await this._roomhandle.leave();
+      } catch (err) {
+        // Already left
+      }
+      this._roomhandle = null;
     }
 
-    return null;
+    if (this._jitsiConnection) {
+      this._jitsiConnection.removeEventListener(
+        JitsiMeetJS.events.connection.CONNECTION_ESTABLISHED,
+        this._loginSuccessHandler,
+      );
+      this._jitsiConnection.removeEventListener(
+        JitsiMeetJS.events.connection.CONNECTION_FAILED,
+        this._loginFailureHandler,
+      );
+      this._jitsiConnection.removeEventListener(
+        JitsiMeetJS.events.connection.CONNECTION_DISCONNECTED,
+        this._onDisconnectHandler,
+      );
+
+      await this._jitsiConnection.disconnect();
+    }
+
+    return true;
   }
 
   async initLocalStream(audioSrc, videoSrc) {
-    const videoEffects = await game.webrtc.client.getVideoFilter();
     return new Promise((resolve) => {
       const localtracks = game.webrtc.client.getLocalTracks();
 
@@ -503,7 +490,6 @@ class JitsiRTCClient extends WebRTCInterface {
           disableSimulcast: false,
           cameraDeviceId: videoSrc,
           micDeviceId: audioSrc,
-          effects: videoEffects,
           constraints: {
             video: {
               aspectRatio: 4 / 3,
@@ -641,7 +627,7 @@ class JitsiRTCClient extends WebRTCInterface {
    * @private
    */
   _onDisconnect(...args) {
-    this.debug('Disconnected', args);
+    game.webrtc.client.debug('Disconnected', args);
     game.webrtc.onDisconnect();
   }
 
