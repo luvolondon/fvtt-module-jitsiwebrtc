@@ -24,6 +24,9 @@ class JitsiRTCClient extends WebRTCInterface {
     this._onDisconnectHandler = null;
   }
 
+  // Default Jitsi Meet address to use
+  static defaultJitsiServer = 'meet.jit.si';
+
   /**
    * Display debug messages on the console if debugging is enabled
    * @param {...*} args      Arguments to console.log
@@ -59,14 +62,14 @@ class JitsiRTCClient extends WebRTCInterface {
 
     return new Promise((resolve) => {
       if (!connectionOptions.host) {
-        // Use default beta jitsi meet server
+        // Use default jitsi meet server
         options = {
           hosts: {
-            domain: 'beta.meet.jit.si',
-            muc: 'conference.beta.meet.jit.si',
+            domain: JitsiRTCClient.defaultJitsiServer,
+            muc: `conference.${JitsiRTCClient.defaultJitsiServer}`,
           },
-          bosh: '//beta.meet.jit.si/http-bind',
-          clientNode: 'http://beta.meet.jit.si',
+          bosh: `//${JitsiRTCClient.defaultJitsiServer}/http-bind`,
+          clientNode: `http://${JitsiRTCClient.defaultJitsiServer}`,
         };
         auth = {};
       } else {
