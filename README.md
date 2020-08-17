@@ -64,7 +64,7 @@ Another great addition to the module be [@bekriebel](https://github.com/bekriebe
 v0.3.0
 Major refactor of the code to better align with FoundryVTT expectations. This should hopefully improve stability and debugging of the module. With this version, @bekriebel (bekit on Discord) has taken over as the primary module owner. Thank you to [@Luvolondon](https://github.com/luvolondon) for the original module work and future efforts with maintaining it!
 * Fix game settings registration so module settings appear properly under the module name. *NOTE*: Because the settings namespace changed, any previously configured settings will be reset with this version.
-* Only use custom URLs when the `Use customer Jitsi URLs` option is enabled. The custom URL settings will be visible after enabling this feature.
+* Only use custom URLs when the `Use custom Jitsi URLs` option is enabled. The custom URL settings will be visible after enabling this feature.
 * Update lib-jitsi-meet to the latest released version.
 * Don't force debugging to always be on. See the Debugging section above on how to enable debug logs.
 * Major refactor of code to better align with FoundryVTT expectations.
