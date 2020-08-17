@@ -522,6 +522,7 @@ class JitsiRTCClient extends WebRTCInterface {
 
 
   async closeLocalStream() {
+    // TODO: Implement this
     this.debug('closeLocalStream not implemented');
   }
 
@@ -642,10 +643,20 @@ class JitsiRTCClient extends WebRTCInterface {
    * This can be used to act according
    * @param {Object} changed     Object consisting of the changed settings in the form {key: value}
    */
-  onSettingsChanged() {
+  onSettingsChanged(changed) {
+    const keys = Object.keys(changed);
 
-    /* TODO
-     */
+    // Change audio or video sources
+    if (keys.some((k) => ['videoSrc', 'audioSrc'].includes(k))
+      || hasProperty(changed, `users.${game.user.id}.canBroadcastVideo`)
+      || hasProperty(changed, `users.${game.user.id}.canBroadcastAudio`)) {
+      /**
+       * We have a bug where changing the audio input device causes some audio issues
+       * For now, force a full reload to avoid the problem
+       * TODO: Handle this properly in the future.
+      */
+      window.location.reload();
+    }
   }
 
   _useCustomUrls(value) {
