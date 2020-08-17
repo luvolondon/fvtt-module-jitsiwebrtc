@@ -3,22 +3,19 @@ Replacement for the easyrtc p2p client to use a Jitsi relay server for A/V. It h
 
 First tests with 4-5 players resulted in ~700Kbit/s upload and ~ 1Mbit/s download rate for each player.
 
-This is a first version to test the integration into FVTT. Have a look at the Issues list for the not yet working features.
-
-Caution:
-Atm the Jitsi Meet lib only works ok if all users are running a Chromium based browser. A solution to add Firefox and Safari to the supported browsers has been announced for April 2020. See https://github.com/jitsi/jitsi-meet/issues/4758 for current progress. Update: With version 0.2.9 a new version of the API lib is included. This should help with problems on FF and Safari.
-
-# Installation
+## Installation
 You can install this module by using the following manifest URL : https://raw.githubusercontent.com/luvolondon/fvtt-module-jitsiwebrtc/master/module.json
 
-# How to use
+## How to use
 To use this client you have to enable A/V in the Game settings. The module will replace the easyrtc client of vanilla FVTT.
 You can either connect via the Jitsi server by leaving the Signalling Server on "Foundry VTT". Or switch to a custom, self-hosted Jitsi server. A great documentation by @solfolango77 for installing your own server can be found here: https://www.vttassets.com/articles/installing-a-self-hosted-jitsi-server-to-use-with-foundry-vtt
 
-# Debugging
+You can allow standalone Jitsi users to join your conference by enabling the module setting `Allow standalone Jitsi users`. When enabled, users can see the Jitsi meeting URL under the read-only module setting `Standalone Jitsi URL`.
+
+## Debugging
 By default, debug logs are disabled. If additional logs are needed for troubleshooting please run the following in the console: `game.settings.set('jitsirtc', 'debug', true);`
 
-# Important
+## Important
 If you test your own Jitsi server with two users, the standard setup will connect these users in a Peer-to-peer way without using the Jitsi bridge. This switches if a third user connects. This module _always_ initiates a Jitsi connection in bridge mode and even with two players never does peer2peer. Keep this in mind when testing.
 
 Thx to this addition by [@bekriebel](https://github.com/bekriebel)
@@ -28,7 +25,7 @@ users can now join the A/V part by directly connecting to the Jitsi server. Thes
 	
 The video stream is configured for a resolution of 240 pixels height. This could later be part of GUI configuration settings.
 
-# Changelog
+## Changelog
 
 v0.1
 Initial release to test the integration with the FVTT API and call handling. 
@@ -63,6 +60,17 @@ Updated compatibleCoreVersion to 0.6.4, copied files from linting-cleanup branch
 
 v0.2.28 
 Another great addition to the module be [@bekriebel](https://github.com/bekriebel), now users that directly connect to the Jitsi server are added to the game as temporary A/V users. Very handy for players without A/V on the desktop who need to usse their mobile phone for A/V.
+
+v0.3.0
+Major refactor of the code to better align with FoundryVTT expectations. This should hopefully improve stability and debugging of the module. With this version, @bekriebel (bekit on Discord) has taken over as the primary module owner. Thank you to [@Luvolondon](https://github.com/luvolondon) for the original module work and future efforts with maintaining it!
+* Fix game settings registration so module settings appear properly under the module name. *NOTE*: Because the settings namespace changed, any previously configured settings will be reset with this version.
+* Only use custom URLs when the `Use customer Jitsi URLs` option is enabled. The custom URL settings will be visible after enabling this feature.
+* Update lib-jitsi-meet to the latest released version.
+* Don't force debugging to always be on. See the Debugging section above on how to enable debug logs.
+* Major refactor of code to better align with FoundryVTT expectations.
+* Kick non-FVTT users out of the meeting if the `Allow standalone Jitsi users` is not enabled.
+* Allow the audio output device to be changed.
+* Switch back to the non-beta Jitsi Meet server by default. The beta server is not as well maintained. If you would like to continue using the beta server, it can be configured as a custom server.
 
 # License
 This Foundry VTT module, written by Luvolondon, is licensed under a Creative Commons Attribution 4.0 International License.
