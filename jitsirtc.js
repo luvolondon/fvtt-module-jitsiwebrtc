@@ -22,6 +22,8 @@ class JitsiRTCClient extends WebRTCInterface {
     this._loginSuccessHandler = null;
     this._loginFailureHandler = null;
     this._onDisconnectHandler = null;
+
+    this.jitsiURL = null;
   }
 
   // Default Jitsi Meet address to use
@@ -123,6 +125,16 @@ class JitsiRTCClient extends WebRTCInterface {
 
       this._room = this.settings.serverRoom;
       this.debug('Meeting room name: ', this._room);
+
+      // Set Jitsi URL
+      this.jitsiURL = `https://${options.hosts.domain}/${this._room}`;
+
+      // If external users are allowed, add the setting
+      if (game.settings.get('jitsirtc', 'allowExternalUsers')) {
+        game.settings.set('jitsirtc', 'externalUsersUrl', this.jitsiURL);
+      }
+
+      // Connect
       this._jitsiConnection.connect(auth);
 
       this.debug('Async call to connect started.');
@@ -682,12 +694,25 @@ Hooks.on('init', () => {
 
   game.settings.register('jitsirtc', 'allowExternalUsers', {
     name: 'Allow standalone Jitsi users',
-    hint: 'If a user joins the Jitsi meeting outside of FVTT, show them to players in the FVTT interface',
+    hint: 'If a user joins the Jitsi meeting outside of FVTT, show them to players in the FVTT interface. (URL will visible to users here after enabling this option).',
     scope: 'world',
     config: true,
     default: false,
     type: Boolean,
     onChange: () => window.location.reload(),
+  });
+  game.settings.register('jitsirtc', 'externalUsersUrl', {
+    name: 'Standalone Jitsi URL (read-only)',
+    hint: 'The URL for standalone Jitsi users to join the conference. Cannot be changed.',
+    scope: 'client',
+    config: game.settings.get('jitsirtc', 'allowExternalUsers'),
+    default: '',
+    type: String,
+    onChange: (value) => {
+      if (value !== game.webrtc.client.jitsiURL) {
+        game.settings.set('jitsirtc', 'externalUsersUrl', game.webrtc.client.jitsiURL);
+      }
+    },
   });
   game.settings.register('jitsirtc', 'customUrls', {
     name: 'Use custom Jitsi URLs',
