@@ -72,6 +72,8 @@ Major refactor of the code to better align with FoundryVTT expectations. This sh
 * Allow the audio output device to be changed.
 * Switch back to the non-beta Jitsi Meet server by default. The beta server is not as well maintained. If you would like to continue using the beta server, it can be configured as a custom server.
 
+v0.3.1
+Switch back to the `beta.meet.jit.si` server as the default. It seems some people have issues connecting to the production server. [Jitsi Comunity thread](https://community.jitsi.org/t/connection-failed-using-lib-jitsi-meet/20774) on the issue.
+
 # License
 This Foundry VTT module, written by Luvolondon, is licensed under a Creative Commons Attribution 4.0 International License.
-
