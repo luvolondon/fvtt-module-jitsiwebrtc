@@ -123,6 +123,12 @@ class JitsiRTCClient extends WebRTCInterface {
         this._onDisconnectHandler,
       );
 
+      // Set a room name if one doesn't yet exist
+      if (!this.settings.serverRoom) {
+        this.debug('No meeting room set, creating random name.');
+        this.settings.serverRoom = randomID(32);
+      }
+
       this._room = this.settings.serverRoom;
       this.debug('Meeting room name: ', this._room);
 
