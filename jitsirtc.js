@@ -27,7 +27,7 @@ class JitsiRTCClient extends WebRTCInterface {
   }
 
   // Default Jitsi Meet address to use
-  static defaultJitsiServer = 'meet.jit.si';
+  static defaultJitsiServer = 'beta.meet.jit.si';
 
   /**
    * Display debug messages on the console if debugging is enabled
