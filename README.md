@@ -75,5 +75,8 @@ Major refactor of the code to better align with FoundryVTT expectations. This sh
 v0.3.1
 Switch back to the `beta.meet.jit.si` server as the default. It seems some people have issues connecting to the production server. [Jitsi Comunity thread](https://community.jitsi.org/t/connection-failed-using-lib-jitsi-meet/20774) on the issue.
 
+v0.3.2
+If no meeting room name is set, create a random name. Not having a name set was causing the module to not work on a freshly created world that never had the room name generated.
+
 # License
 This Foundry VTT module, written by Luvolondon, is licensed under a Creative Commons Attribution 4.0 International License.
