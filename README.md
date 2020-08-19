@@ -78,5 +78,9 @@ Switch back to the `beta.meet.jit.si` server as the default. It seems some peopl
 v0.3.2
 If no meeting room name is set, create a random name. Not having a name set was causing the module to not work on a freshly created world that never had the room name generated.
 
+v0.3.3
+* Fix an issue where multiple users connecting to a load-balanced Jitsi instance (like the default Jitsi Meet servers) may get put on different instances of the conference and not see each other.
+* When setting custom URLs, also populate with default server information if no custom server is entered.
+
 # License
 This Foundry VTT module, written by Luvolondon, is licensed under a Creative Commons Attribution 4.0 International License.
