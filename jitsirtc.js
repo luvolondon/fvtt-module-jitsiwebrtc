@@ -101,6 +101,18 @@ class JitsiRTCClient extends WebRTCInterface {
         };
       }
 
+      // Set a room name if one doesn't yet exist
+      if (!this.settings.serverRoom) {
+        this.debug('No meeting room set, creating random name.');
+        this.settings.serverRoom = randomID(32);
+      }
+
+      this._room = this.settings.serverRoom;
+      this.debug('Meeting room name: ', this._room);
+
+      // Add the room name to the bosh URL to ensure all users end up on the same shard
+      options.bosh += `?room=${this._room}`;
+
       this._jitsiConnection = new JitsiMeetJS.JitsiConnection(null, null, options);
 
       this.debug('Connection created with options:', options);
@@ -122,15 +134,6 @@ class JitsiRTCClient extends WebRTCInterface {
         JitsiMeetJS.events.connection.CONNECTION_DISCONNECTED,
         this._onDisconnectHandler,
       );
-
-      // Set a room name if one doesn't yet exist
-      if (!this.settings.serverRoom) {
-        this.debug('No meeting room set, creating random name.');
-        this.settings.serverRoom = randomID(32);
-      }
-
-      this._room = this.settings.serverRoom;
-      this.debug('Meeting room name: ', this._room);
 
       // Set Jitsi URL
       this.jitsiURL = `https://${options.hosts.domain}/${this._room}`;
