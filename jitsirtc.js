@@ -76,11 +76,13 @@ class JitsiRTCClient extends WebRTCInterface {
         auth = {};
       } else {
         // Use custom server config
+        let domaintUrl = `${connectionOptions.host}`;
         let mucUrl = `conference.${connectionOptions.host}`;
         let focusUrl = `focus.${connectionOptions.host}`;
         let boshUrl = `//${connectionOptions.host}/http-bind`;
 
         if (game.settings.get('jitsirtc', 'customUrls')) {
+          domainUrl = game.settings.get('jitsirtc', 'domainUrl');
           mucUrl = game.settings.get('jitsirtc', 'mucUrl');
           focusUrl = game.settings.get('jitsirtc', 'focusUrl');
           boshUrl = game.settings.get('jitsirtc', 'boshUrl');
@@ -88,7 +90,7 @@ class JitsiRTCClient extends WebRTCInterface {
 
         options = {
           hosts: {
-            domain: connectionOptions.host,
+            domain: domainUrl,
             muc: mucUrl,
             focus: focusUrl,
           },
@@ -732,6 +734,16 @@ Hooks.on('init', () => {
     type: Boolean,
     onChange: (value) => game.webrtc.client._useCustomUrls(value),
   });
+  game.settings.register('jitsirtc', 'domainUrl', {
+    name: 'Jitsi Domain URL',
+    hint: 'config["hosts"]["domain"] in jitsi-meet config.js',
+    default: '',
+    scope: 'world',
+    type: String,
+    config: game.settings.get('jitsirtc', 'customUrls'),
+    onChange: () => window.location.reload(),
+  });
+
   game.settings.register('jitsirtc', 'mucUrl', {
     name: 'Jitsi MUC URL',
     hint: 'config["hosts"]["muc"] in jitsi-meet config.js',
