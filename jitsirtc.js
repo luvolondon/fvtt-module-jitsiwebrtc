@@ -76,7 +76,7 @@ class JitsiRTCClient extends WebRTCInterface {
         auth = {};
       } else {
         // Use custom server config
-        let domaintUrl = `${connectionOptions.host}`;
+        let domainUrl = `${connectionOptions.host}`;
         let mucUrl = `conference.${connectionOptions.host}`;
         let focusUrl = `focus.${connectionOptions.host}`;
         let boshUrl = `//${connectionOptions.host}/http-bind`;
