@@ -686,11 +686,13 @@ class JitsiRTCClient extends WebRTCInterface {
     if (value) {
       // Initially set to defaults
       const serverUrl = this.settings.serverUrl || JitsiRTCClient.defaultJitsiServer;
+      game.settings.set('jitsirtc', 'domainUrl', `${serverUrl}`);
       game.settings.set('jitsirtc', 'mucUrl', `conference.${serverUrl}`);
       game.settings.set('jitsirtc', 'focusUrl', `focus.${serverUrl}`);
       game.settings.set('jitsirtc', 'boshUrl', `//${serverUrl}/http-bind`);
     } else {
       // Clear values
+      game.settings.set('jitsirtc', 'domainUrl', '');
       game.settings.set('jitsirtc', 'mucUrl', '');
       game.settings.set('jitsirtc', 'focusUrl', '');
       game.settings.set('jitsirtc', 'boshUrl', '');
