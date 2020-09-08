@@ -11,5 +11,5 @@
   "download": "https://github.com/luvolondon/fvtt-module-jitsiwebrtc/archive/v0.3.4.zip",
   "minimumCoreVersion": "0.5.5",
   "compatibleCoreVersion": "0.7.1",
-  "scripts": ["jitsirtc.js", "lib-jitsi-meet.min.js"]
+  "scripts": ["jitsirtc.js", "jitsirtc-legacy.js", "lib-jitsi-meet.min.js"]
 }

@@ -281,7 +281,7 @@ class JitsiRTCLegacyClient extends WebRTCInterface {
     this.debug("assignStreamToVideo stream:", stream, " video:", video);
 
     // If this if for our local user, attach our video track using Jitsi
-    if (video.classList.contains('local-camera')) {
+    if (video.classList.contains("local-camera")) {
       if (this._roomhandle) {
         const localVideoTrack = this._roomhandle.getLocalVideoTrack();
         if (localVideoTrack && video) {
@@ -710,6 +710,12 @@ class JitsiRTCLegacyClient extends WebRTCInterface {
 }
 
 Hooks.on("init", () => {
+  if (isNewerVersion(game.data.version, "0.7.1")) {
+    // Use new jitsirtc instead of this one
+    return;
+  }
+
+  console.log("JitsiRTC | Activating Jitsi WebRTC client for FVTT version <= 0.7.1");
   CONFIG.WebRTC.clientClass = JitsiRTCLegacyClient;
 
   game.settings.register("jitsirtc", "allowExternalUsers", {
