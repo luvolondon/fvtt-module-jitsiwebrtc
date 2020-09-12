@@ -138,7 +138,7 @@ class JitsiRTCClient extends WebRTCInterface {
       );
 
       // Set Jitsi URL
-      this.jitsiURL = `https://${options.hosts.domain}/${this._room}`;
+      this.jitsiURL = `https://${connectionOptions.host}/${this._room}`;
 
       // If external users are allowed, add the setting
       if (game.settings.get('jitsirtc', 'allowExternalUsers')) {
