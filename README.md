@@ -82,5 +82,8 @@ v0.3.3
 * Fix an issue where multiple users connecting to a load-balanced Jitsi instance (like the default Jitsi Meet servers) may get put on different instances of the conference and not see each other.
 * When setting custom URLs, also populate with default server information if no custom server is entered.
 
+v0.3.4
+* Use Jitsi's API for attaching local video to the video window. This should fix the freezing of local video windows.
+
 # License
 This Foundry VTT module, written by Luvolondon, is licensed under a Creative Commons Attribution 4.0 International License.
