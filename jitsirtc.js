@@ -280,6 +280,17 @@ class JitsiRTCClient extends WebRTCInterface {
   assignStreamToVideo(stream, video) {
     this.debug('assignStreamToVideo stream:', stream, ' video:', video);
 
+    // If this if for our local user, attach our video track using Jitsi
+    if (video.classList.contains('local-camera')) {
+      if (this._roomhandle) {
+        const localVideoTrack = this._roomhandle.getLocalVideoTrack();
+        if (localVideoTrack && video) {
+          localVideoTrack.attach(video);
+        }
+        return;
+      }
+    }
+
     const streamVideo = video;
 
     if (stream) {
