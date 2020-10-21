@@ -85,5 +85,10 @@ v0.3.3
 v0.3.4
 * Use Jitsi's API for attaching local video to the video window. This should fix the freezing of local video windows.
 
+v0.4.0
+* Update to support FVTT 0.7.2 and above
+* Update lib-jitsi-meet to latest library version
+* This is a major refactor of the code base and may still contain bugs. Please submit issues that are found.
+
 # License
 This Foundry VTT module, written by Luvolondon, is licensed under a Creative Commons Attribution 4.0 International License.
