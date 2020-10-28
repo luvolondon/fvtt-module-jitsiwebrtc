@@ -90,5 +90,8 @@ v0.4.0
 * Update lib-jitsi-meet to latest library version
 * This is a major refactor of the code base and may still contain bugs. Please submit issues that are found.
 
+v0.4.1
+* Update lib-jitsi-meet to latest version from beta.meet.jit.si. This will hopefully resolve some of the connection issues.
+
 # License
 This Foundry VTT module, written by Luvolondon, is licensed under a Creative Commons Attribution 4.0 International License.
