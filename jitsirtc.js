@@ -19,6 +19,7 @@ class JitsiRTCClient extends AVClient {
     this._loginFailureHandler = null;
     this._onDisconnectHandler = null;
     this._localAudioEnabled = false;
+    this._localAudioBroadcastEnabled = false;
     this._localVideoEnabled = false;
 
     this.jitsiURL = null;
@@ -223,6 +224,7 @@ class JitsiRTCClient extends AVClient {
      */
   async toggleAudio(enable) {
     this.debug("Toggling audio:", enable);
+    if (!this._localAudioBroadcastEnabled ) return;
     this._localAudioEnabled = enable;
     const localAudioTrack = this._jitsiConference.getLocalAudioTrack();
     if (localAudioTrack) {
@@ -243,6 +245,8 @@ class JitsiRTCClient extends AVClient {
      * @param {boolean} broadcast   Whether outbound audio should be sent to connected peers or not?
      */
   async toggleBroadcast(broadcast) {
+    this.debug("Toggling Broadcast audio:", enable);
+    this._localAudioBroadcastEnabled = broadcast;
     const localAudioTrack = this._jitsiConference.getLocalAudioTrack();
     if (localAudioTrack) {
       if (broadcast) {
