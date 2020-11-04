@@ -39,6 +39,16 @@ class JitsiRTCClient extends AVClient {
      */
   async initialize() {
     this.debug("JitsiRTCClient initialize");
+    const serverUrl = this.settings.get("world", "server").url || JitsiRTCClient.defaultJitsiServer;
+
+    // Load lib-jitsi-meet and config values from the selected server
+    await this._loadScript(`https://${serverUrl}/libs/lib-jitsi-meet.min.js`);
+    await this._loadScript(`https://${serverUrl}/config.js`);
+
+    // Disable P2P connections
+    config.enableP2P = false;
+    config.p2p.enabled = false;
+
     const jitsiInit = JitsiMeetJS.init();
     JitsiMeetJS.setLogLevel(JitsiMeetJS.logLevels.ERROR);
     return jitsiInit;
@@ -75,6 +85,7 @@ class JitsiRTCClient extends AVClient {
      * @return {Promise<boolean>}   Did a disconnection occur?
      */
   async disconnect() {
+    this.debug("JitsiRTCClient disconnect");
     let disconnected = false;
     if (this._jitsiConference) {
       disconnected = true;
@@ -340,42 +351,22 @@ class JitsiRTCClient extends AVClient {
    * @private
    */
   async _connectServer(connectionSettings) {
-    let options = {};
     let auth = {};
 
     return new Promise((resolve) => {
       if (connectionSettings.type === "FVTT") { // TODO - set this to jitsi/beta
         // Use default jitsi meet server
-        options = {
-          hosts: {
-            domain: JitsiRTCClient.defaultJitsiServer,
-            muc: `conference.${JitsiRTCClient.defaultJitsiServer}`,
-          },
-          bosh: `//${JitsiRTCClient.defaultJitsiServer}/http-bind`,
-          clientNode: `http://${JitsiRTCClient.defaultJitsiServer}`,
-        };
         auth = {};
       } else {
         // Use custom server config
-        let mucUrl = `conference.${connectionSettings.url}`;
-        let focusUrl = `focus.${connectionSettings.url}`;
-        let boshUrl = `//${connectionSettings.url}/http-bind`;
-
         if (game.settings.get("jitsirtc", "customUrls")) {
-          mucUrl = game.settings.get("jitsirtc", "mucUrl");
-          focusUrl = game.settings.get("jitsirtc", "focusUrl");
-          boshUrl = game.settings.get("jitsirtc", "boshUrl");
+          config.hosts.domain = game.settings.get("jitsirtc", "domainUrl");
+          config.hosts.muc = game.settings.get("jitsirtc", "mucUrl");
+          config.hosts.focus = game.settings.get("jitsirtc", "focusUrl");
+          config.hosts.bosh = game.settings.get("jitsirtc", "boshUrl");
+          config.hosts.websocket = game.settings.get("jitsirtc", "websocketUrl");
         }
 
-        options = {
-          hosts: {
-            domain: connectionSettings.url,
-            muc: mucUrl,
-            focus: focusUrl,
-          },
-          bosh: boshUrl,
-          clientNode: "http://jitsi.org/jitsimeet",
-        };
         auth = {
           id: connectionSettings.username,
           password: connectionSettings.password,
@@ -391,12 +382,13 @@ class JitsiRTCClient extends AVClient {
       this._room = connectionSettings.room;
       this.debug("Meeting room name: ", this._room);
 
-      // Add the room name to the bosh URL to ensure all users end up on the same shard
-      options.bosh += `?room=${this._room}`;
+      // Add the room name to the bosh & websocket URLs to ensure all users end up on the same shard
+      config.bosh += `?room=${this._room}`;
+      config.websocket += `?room=${this._room}`;
 
-      this._jitsiConnection = new JitsiMeetJS.JitsiConnection(null, null, options);
+      this._jitsiConnection = new JitsiMeetJS.JitsiConnection(null, null, config);
 
-      this.debug("Connection created with options:", options);
+      this.debug("Connection created with options:", config);
 
       this._loginSuccessHandler = this._loginSuccess.bind(this, resolve);
       this._jitsiConnection.addEventListener(
@@ -417,7 +409,7 @@ class JitsiRTCClient extends AVClient {
       );
 
       // Set Jitsi URL
-      this.jitsiURL = `https://${options.hosts.domain}/${this._room}`;
+      this.jitsiURL = `https://${config.hosts.domain}/${this._room}`;
 
       // If external users are allowed, add the setting
       if (game.settings.get("jitsirtc", "allowExternalUsers")) {
@@ -521,14 +513,7 @@ class JitsiRTCClient extends AVClient {
    */
   _loginSuccess(resolve) {
     // Set up room handle
-    this._jitsiConference = this._jitsiConnection.initJitsiConference(this._room, {
-      openBridgeChannel: true,
-      startSilent: false,
-      enableTalkWhileMuted: true,
-      p2p: {
-        enabled: false,
-      },
-    });
+    this._jitsiConference = this._jitsiConnection.initJitsiConference(this._room, config);
     this.debug("conference joined: ", this._jitsiConference);
 
     // Set our jitsi username to our FVTT user ID
@@ -796,18 +781,46 @@ class JitsiRTCClient extends AVClient {
     return obj;
   }
 
+  /**
+   * Dynamically load additional script files, returning when loaded
+   * @param scriptSrc    The location of the script file
+   * @private
+   */
+  async _loadScript(scriptSrc) {
+    this.debug("Loading script", scriptSrc);
+    return new Promise((resolve, reject) => {
+      const scriptElement = document.createElement("script");
+      $("head").append(scriptElement);
+
+      scriptElement.type = "text/javascript";
+      scriptElement.src = scriptSrc;
+      scriptElement.onload = () => {
+        this.debug("Loaded script", scriptSrc);
+        resolve(true);
+      };
+      scriptElement.onerror = (err) => {
+        this.onError("Error loading script", scriptSrc);
+        reject(err);
+      };
+    });
+  }
+
   _useCustomUrls(value) {
     if (value) {
       // Initially set to defaults
       const serverUrl = this.settings.serverUrl || JitsiRTCClient.defaultJitsiServer;
+      game.settings.set("jitsirtc", "domainUrl", serverUrl);
       game.settings.set("jitsirtc", "mucUrl", `conference.${serverUrl}`);
       game.settings.set("jitsirtc", "focusUrl", `focus.${serverUrl}`);
       game.settings.set("jitsirtc", "boshUrl", `//${serverUrl}/http-bind`);
+      game.settings.set("jitsirtc", "websocketUrl", `wss://${serverUrl}/xmpp-websocket`);
     } else {
       // Clear values
+      game.settings.set("jitsirtc", "domainUrl", "");
       game.settings.set("jitsirtc", "mucUrl", "");
       game.settings.set("jitsirtc", "focusUrl", "");
       game.settings.set("jitsirtc", "boshUrl", "");
+      game.settings.set("jitsirtc", "websocketUrl", "");
     }
 
     window.location.reload();
@@ -835,12 +848,6 @@ class JitsiRTCClient extends AVClient {
 /* -------------------------------------------- */
 
 Hooks.on("init", () => {
-  if (!isNewerVersion(game.data.version, "0.7.1")) {
-    // Use legacy jitsirtc instead of this one
-    return;
-  }
-
-  console.log("JitsiRTC | Activating Jitsi WebRTC client for FVTT version > 0.7.1");
   CONFIG.WebRTC.clientClass = JitsiRTCClient;
 
   game.settings.register("jitsirtc", "allowExternalUsers", {
@@ -874,6 +881,15 @@ Hooks.on("init", () => {
     type: Boolean,
     onChange: (value) => game.webrtc.client._useCustomUrls(value),
   });
+  game.settings.register("jitsirtc", "domainUrl", {
+    name: "Jitsi Domain URL",
+    hint: 'config["hosts"]["domain"] in jitsi-meet config.js',
+    default: "",
+    scope: "world",
+    type: String,
+    config: game.settings.get("jitsirtc", "customUrls"),
+    onChange: () => window.location.reload(),
+  });
   game.settings.register("jitsirtc", "mucUrl", {
     name: "Jitsi MUC URL",
     hint: 'config["hosts"]["muc"] in jitsi-meet config.js',
@@ -895,6 +911,15 @@ Hooks.on("init", () => {
   game.settings.register("jitsirtc", "boshUrl", {
     name: "Jitsi Bosh URL",
     hint: 'config["bosh"] in jitsi-meet config.js',
+    default: "",
+    scope: "world",
+    type: String,
+    config: game.settings.get("jitsirtc", "customUrls"),
+    onChange: () => window.location.reload(),
+  });
+  game.settings.register("jitsirtc", "websocketUrl", {
+    name: "Jitsi Websocket URL",
+    hint: 'config["wbesocket"] in jitsi-meet config.js',
     default: "",
     scope: "world",
     type: String,
