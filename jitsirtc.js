@@ -224,7 +224,7 @@ class JitsiRTCClient extends AVClient {
      */
   async toggleAudio(enable) {
     this.debug("Toggling audio:", enable);
-    if (!this._localAudioBroadcastEnabled ) return;
+    if (!this._localAudioBroadcastEnabled) return;
     this._localAudioEnabled = enable;
     const localAudioTrack = this._jitsiConference.getLocalAudioTrack();
     if (localAudioTrack) {
