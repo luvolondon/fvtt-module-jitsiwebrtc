@@ -245,7 +245,7 @@ class JitsiRTCClient extends AVClient {
      * @param {boolean} broadcast   Whether outbound audio should be sent to connected peers or not?
      */
   async toggleBroadcast(broadcast) {
-    this.debug("Toggling Broadcast audio:", enable);
+    this.debug("Toggling Broadcast audio:", broadcast);
     this._localAudioBroadcastEnabled = broadcast;
     const localAudioTrack = this._jitsiConference.getLocalAudioTrack();
     if (localAudioTrack) {
