@@ -796,6 +796,23 @@ class JitsiRTCClient extends AVClient {
     return obj;
   }
 
+  _useCustomUrls(value) {
+    if (value) {
+      // Initially set to defaults
+      const serverUrl = this.settings.serverUrl || JitsiRTCClient.defaultJitsiServer;
+      game.settings.set("jitsirtc", "mucUrl", `conference.${serverUrl}`);
+      game.settings.set("jitsirtc", "focusUrl", `focus.${serverUrl}`);
+      game.settings.set("jitsirtc", "boshUrl", `//${serverUrl}/http-bind`);
+    } else {
+      // Clear values
+      game.settings.set("jitsirtc", "mucUrl", "");
+      game.settings.set("jitsirtc", "focusUrl", "");
+      game.settings.set("jitsirtc", "boshUrl", "");
+    }
+
+    window.location.reload();
+  }
+
   /**
    * Display debug messages on the console if debugging is enabled
    * @param {...*} args      Arguments to console.log
