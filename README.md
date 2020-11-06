@@ -93,5 +93,9 @@ v0.4.0
 v0.4.1
 * Update lib-jitsi-meet to latest version from beta.meet.jit.si. This will hopefully resolve some of the connection issues.
 
+v0.4.2
+* Dynamically jitsi library and config from server. This will hopefully make connections more reliable.
+* Remove support for FVTT versions lower than v0.7.2
+
 # License
 This Foundry VTT module, written by Luvolondon, is licensed under a Creative Commons Attribution 4.0 International License.
