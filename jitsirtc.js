@@ -429,10 +429,23 @@ class JitsiRTCClient extends AVClient {
   async _initializeLocal({ audioSrc, videoSrc } = {}) {
     await this._closeLocalTracks();
 
+    let videoDevice = videoSrc;
+    let audioDevice = audioSrc;
+
+    // Handle missing video device
+    if (Object.entries(await this.getVideoSources()).length === 0 || (videoDevice !== "default" && !(videoDevice in await this.getVideoSources()))) {
+      videoDevice = null;
+    }
+
+    // handle missing audio device
+    if (Object.entries(await this.getAudioSources()).length === 0 || (audioDevice !== "default" && !(audioDevice in await this.getAudioSources()))) {
+      audioDevice = null;
+    }
+
     const devlist = [];
     let localTracks = [];
-    if (audioSrc) devlist.push("audio");
-    if (videoSrc) devlist.push("video");
+    if (audioDevice) devlist.push("audio");
+    if (videoDevice) devlist.push("video");
     this.debug("Device list for createLocalTracks: ", devlist);
 
     // Create our tracks
@@ -442,8 +455,8 @@ class JitsiRTCClient extends AVClient {
           devices: devlist,
           resolution: 240,
           disableSimulcast: false,
-          cameraDeviceId: videoSrc,
-          micDeviceId: audioSrc,
+          cameraDeviceId: videoDevice,
+          micDeviceId: audioDevice,
           constraints: {
             video: {
               aspectRatio: 4 / 3,
