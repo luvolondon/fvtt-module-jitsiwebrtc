@@ -10,6 +10,7 @@ class JitsiRTCClient extends AVClient {
 
     this._jitsiConnection = null;
     this._jitsiConference = null;
+    this._server = null;
     this._room = null;
     this._streams = {};
     this._usernameCache = {};
@@ -39,11 +40,16 @@ class JitsiRTCClient extends AVClient {
      */
   async initialize() {
     this.debug("JitsiRTCClient initialize");
-    const serverUrl = this.settings.get("world", "server").url || JitsiRTCClient.defaultJitsiServer;
+    if (this.settings.get("world", "server").type === "custom") {
+      this._server = this.settings.get("world", "server").url;
+    } else {
+      // TODO: set up server types for beta / defult jitsi servers instead of just the "FVTT" type
+      this._server = JitsiRTCClient.defaultJitsiServer;
+    }
 
     // Load lib-jitsi-meet and config values from the selected server
-    await this._loadScript(`https://${serverUrl}/libs/lib-jitsi-meet.min.js`);
-    await this._loadScript(`https://${serverUrl}/config.js`);
+    await this._loadScript(`https://${this._server}/libs/lib-jitsi-meet.min.js`);
+    await this._loadScript(`https://${this._server}/config.js`);
 
     // Disable P2P connections
     config.enableP2P = false;
@@ -354,10 +360,7 @@ class JitsiRTCClient extends AVClient {
     let auth = {};
 
     return new Promise((resolve) => {
-      if (connectionSettings.type === "FVTT") { // TODO - set this to jitsi/beta
-        // Use default jitsi meet server
-        auth = {};
-      } else {
+      if (connectionSettings.type === "custom") {
         // Use custom server config
         if (game.settings.get("jitsirtc", "customUrls")) {
           config.hosts.domain = game.settings.get("jitsirtc", "domainUrl");
@@ -808,12 +811,11 @@ class JitsiRTCClient extends AVClient {
   _useCustomUrls(value) {
     if (value) {
       // Initially set to defaults
-      const serverUrl = this.settings.serverUrl || JitsiRTCClient.defaultJitsiServer;
-      game.settings.set("jitsirtc", "domainUrl", serverUrl);
-      game.settings.set("jitsirtc", "mucUrl", `conference.${serverUrl}`);
-      game.settings.set("jitsirtc", "focusUrl", `focus.${serverUrl}`);
-      game.settings.set("jitsirtc", "boshUrl", `//${serverUrl}/http-bind`);
-      game.settings.set("jitsirtc", "websocketUrl", `wss://${serverUrl}/xmpp-websocket`);
+      game.settings.set("jitsirtc", "domainUrl", this._server);
+      game.settings.set("jitsirtc", "mucUrl", `conference.${this._server}`);
+      game.settings.set("jitsirtc", "focusUrl", `focus.${this._server}`);
+      game.settings.set("jitsirtc", "boshUrl", `//${this._server}/http-bind`);
+      game.settings.set("jitsirtc", "websocketUrl", `wss://${this._server}/xmpp-websocket`);
     } else {
       // Clear values
       game.settings.set("jitsirtc", "domainUrl", "");
