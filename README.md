@@ -105,4 +105,4 @@ v0.4.3
 * Reduce the number of render calls to hopefully make UI updates work better
 
 # License
-This Foundry VTT module, written by Luvolondon, is licensed under a Creative Commons Attribution 4.0 International License.
+This Foundry VTT module is licensed under a Creative Commons Attribution 4.0 International License.
