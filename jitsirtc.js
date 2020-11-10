@@ -564,6 +564,10 @@ class JitsiRTCClient extends AVClient {
       this._onTrackAudioLevelChanged.bind(this),
     );
     this._jitsiConference.on(
+      JitsiMeetJS.events.conference.TRACK_MUTE_CHANGED,
+      this._onTrackMuteChanged.bind(this),
+    );
+    this._jitsiConference.on(
       JitsiMeetJS.events.conference.DOMINANT_SPEAKER_CHANGED,
       this._onDominantSpeakerChanged.bind(this),
     );
@@ -624,7 +628,9 @@ class JitsiRTCClient extends AVClient {
     }
     this.debug("remote track add finished, type: ", jitsiTrack.getType(), " participant: ", participant);
 
-    this.master.render();
+    if (jitsiTrack.getType() === "video") {
+      this.master.render();
+    }
   }
 
 
@@ -632,22 +638,24 @@ class JitsiRTCClient extends AVClient {
    * Handles incoming lost remote track
    * @param track JitsiTrack object
    */
-  _onRemoteTrackRemove(track) {
-    if (track.isLocal()) {
+  _onRemoteTrackRemove(jitsiTrack) {
+    if (jitsiTrack.isLocal()) {
       return;
     }
-    const participant = track.getParticipantId();
+    const participant = jitsiTrack.getParticipantId();
 
-    this.debug("remote track type ", track.getType(), " removed for participant ", participant);
+    this.debug("remote track type ", jitsiTrack.getType(), " removed for participant ", participant);
 
     const userId = this._idCache[participant];
 
     if (userId != null) {
       const userStream = this.getMediaStreamForUser(userId);
-      userStream.removeTrack(track.track);
+      userStream.removeTrack(jitsiTrack.track);
     }
 
-    this.master.render();
+    if (jitsiTrack.getType() === "video") {
+      this.master.render();
+    }
   }
 
   /**
@@ -660,6 +668,27 @@ class JitsiRTCClient extends AVClient {
       ui.webrtc.setUserIsSpeaking(this._idCache[participantId], true);
     } else {
       ui.webrtc.setUserIsSpeaking(this._idCache[participantId], false);
+    }
+  }
+
+  /**
+   * Handles JitsiTrack was muted or unmuted
+   * @param jitsiTrack JitsiTrack object
+   */
+  _onTrackMuteChanged(jitsiTrack) {
+    if (jitsiTrack.isLocal()) {
+      return;
+    }
+    const participant = jitsiTrack.getParticipantId();
+
+    this.debug("mute changed for ", jitsiTrack.getType(), " for participant ", participant);
+
+    if (jitsiTrack.getType() === "video") {
+      if (jitsiTrack.isMuted()) {
+        this._onRemoteTrackRemove(jitsiTrack);
+      } else {
+        this._onRemoteTrackAdded(jitsiTrack);
+      }
     }
   }
 
