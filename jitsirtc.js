@@ -54,7 +54,7 @@ class JitsiRTCClient extends AVClient {
     // Set up default config values
     this._setConfigValues();
 
-    const jitsiInit = JitsiMeetJS.init();
+    const jitsiInit = JitsiMeetJS.init(config);
     JitsiMeetJS.setLogLevel(JitsiMeetJS.logLevels.ERROR);
     return jitsiInit;
   }
