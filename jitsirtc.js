@@ -51,9 +51,8 @@ class JitsiRTCClient extends AVClient {
     await this._loadScript(`https://${this._server}/libs/lib-jitsi-meet.min.js`);
     await this._loadScript(`https://${this._server}/config.js`);
 
-    // Disable P2P connections
-    config.enableP2P = false;
-    config.p2p.enabled = false;
+    // Set up default config values
+    this._setConfigValues();
 
     const jitsiInit = JitsiMeetJS.init();
     JitsiMeetJS.setLogLevel(JitsiMeetJS.logLevels.ERROR);
@@ -377,15 +376,7 @@ class JitsiRTCClient extends AVClient {
 
     return new Promise((resolve) => {
       if (connectionSettings.type === "custom") {
-        // Use custom server config
-        if (game.settings.get("jitsirtc", "customUrls")) {
-          config.hosts.domain = game.settings.get("jitsirtc", "domainUrl");
-          config.hosts.muc = game.settings.get("jitsirtc", "mucUrl");
-          config.hosts.focus = game.settings.get("jitsirtc", "focusUrl");
-          config.hosts.bosh = game.settings.get("jitsirtc", "boshUrl");
-          config.hosts.websocket = game.settings.get("jitsirtc", "websocketUrl");
-        }
-
+        // Set up auth
         auth = {
           id: connectionSettings.username,
           password: connectionSettings.password,
@@ -855,6 +846,43 @@ class JitsiRTCClient extends AVClient {
     }
 
     window.location.reload();
+  }
+
+  _setConfigValues() {
+    // Use custom server config if enabled
+    if (game.settings.get("jitsirtc", "customUrls")) {
+      // Create hosts config object if it doesn't exist
+      if (typeof (config.hosts) !== "object") {
+        config.hosts = {};
+      }
+      config.hosts.domain = game.settings.get("jitsirtc", "domainUrl");
+      config.hosts.muc = game.settings.get("jitsirtc", "mucUrl");
+      config.hosts.focus = game.settings.get("jitsirtc", "focusUrl");
+      config.hosts.bosh = game.settings.get("jitsirtc", "boshUrl");
+      config.hosts.websocket = game.settings.get("jitsirtc", "websocketUrl");
+    }
+
+    // Create p2p config object if it doesn't exist
+    if (typeof (config.p2p) !== "object") {
+      config.p2p = {};
+    }
+
+    // Disable P2P connections
+    config.enableP2P = false;
+    config.p2p.enabled = false;
+
+    // Disable simulcast and enable layer suspension for performance
+    config.disableSimulcast = true;
+    config.enableLayerSuspension = true;
+
+    // Disable audio detections for performance
+    config.enableNoAudioDetection = false;
+    config.enableNoisyMicDetection = false;
+
+    // Remove callStats settings to avoid errors
+    delete config.callStatsID;
+    delete config.callStatsSecret;
+    delete config.callStatsCustomScriptUrl;
   }
 
   /**
