@@ -737,9 +737,6 @@ class JitsiRTCClient extends AVClient {
     this._idCache[id] = displayName;
     this._streams[displayName] = new MediaStream();
     this.debug("user joined: ", displayName);
-
-    // Update the video element in the Camera Views UI
-    this.master.render();
   }
 
   _onUserLeft(id) {
@@ -754,9 +751,6 @@ class JitsiRTCClient extends AVClient {
       delete this._externalUserCache[id];
       game.users.delete(id);
     }
-
-    // Update the video element in the Camera Views UI
-    this.master.render();
   }
 
   /**
