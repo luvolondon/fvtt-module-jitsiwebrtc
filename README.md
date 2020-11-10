@@ -97,5 +97,12 @@ v0.4.2
 * Dynamically jitsi library and config from server. This will hopefully make connections more reliable.
 * Remove support for FVTT versions lower than v0.7.2
 
+v0.4.3
+* Properly handle the URL between custom and default ("FVTT") server selection
+* Properly handle missing audio and video devices
+* Set voice-activation mode to act the same as always-on. Since Jitsi handles voice activation natively, there is no need to handle this differently.
+* Update the values read from config.js with better defaults
+* Reduce the number of render calls to hopefully make UI updates work better
+
 # License
 This Foundry VTT module, written by Luvolondon, is licensed under a Creative Commons Attribution 4.0 International License.
