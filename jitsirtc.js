@@ -262,11 +262,20 @@ class JitsiRTCClient extends AVClient {
      * @param {boolean} broadcast   Whether outbound audio should be sent to connected peers or not?
      */
   async toggleBroadcast(broadcast) {
-    this.debug("Toggling Broadcast audio:", broadcast);
-    this._localAudioBroadcastEnabled = broadcast;
+    let enableBroadcast = broadcast;
+    this.debug("Toggling Broadcast audio:", enableBroadcast);
+
+    // If using voice activation mode, override the broadcast setting.
+    //   Jitsi already handles voice activation, so we don't need to double it up.
+    if (this.settings.client.voice.mode === "activity") {
+      this.debug("Ignoring voice activation in favor of Jitsi's built in audio handling");
+      enableBroadcast = true;
+    }
+
+    this._localAudioBroadcastEnabled = enableBroadcast;
     const localAudioTrack = this._jitsiConference.getLocalAudioTrack();
     if (localAudioTrack) {
-      if (broadcast) {
+      if (enableBroadcast) {
         await localAudioTrack.unmute();
       } else {
         await localAudioTrack.mute();
@@ -336,12 +345,19 @@ class JitsiRTCClient extends AVClient {
      * @param {object} changed      The settings which have changed
      */
   onSettingsChanged(changed) {
+    this.debug("onSettingsChanged:", changed);
     const keys = Object.keys(flattenObject(changed));
 
     // Change audio or video sources
     if (keys.some((k) => ["client.videoSrc", "client.audioSrc"].includes(k))
       || hasProperty(changed, `users.${game.user.id}.canBroadcastVideo`)
       || hasProperty(changed, `users.${game.user.id}.canBroadcastAudio`)) {
+      // TODO: See if we can handle this without a full reload
+      window.location.reload();
+    }
+
+    // Change voice broadcasting mode
+    if (keys.some((k) => ["client.voice.mode"].includes(k))) {
       // TODO: See if we can handle this without a full reload
       window.location.reload();
     }
