@@ -54,6 +54,11 @@ class JitsiRTCClient extends AVClient {
     // Set up default config values
     this._setConfigValues();
 
+    if (this.settings.get("client", "voice.mode") === "activity") {
+      this.debug("disabling voice activation mode as it is handled natively by Jitsi");
+      this.settings.set("client", "voice.mode", "always");
+    }
+
     const jitsiInit = JitsiMeetJS.init(config);
     JitsiMeetJS.setLogLevel(JitsiMeetJS.logLevels.ERROR);
     return jitsiInit;
@@ -261,20 +266,12 @@ class JitsiRTCClient extends AVClient {
      * @param {boolean} broadcast   Whether outbound audio should be sent to connected peers or not?
      */
   async toggleBroadcast(broadcast) {
-    let enableBroadcast = broadcast;
-    this.debug("Toggling Broadcast audio:", enableBroadcast);
+    this.debug("Toggling Broadcast audio:", broadcast);
 
-    // If using voice activation mode, override the broadcast setting.
-    //   Jitsi already handles voice activation, so we don't need to double it up.
-    if (this.settings.client.voice.mode === "activity") {
-      this.debug("Ignoring voice activation in favor of Jitsi's built in audio handling");
-      enableBroadcast = true;
-    }
-
-    this._localAudioBroadcastEnabled = enableBroadcast;
+    this._localAudioBroadcastEnabled = broadcast;
     const localAudioTrack = this._jitsiConference.getLocalAudioTrack();
     if (localAudioTrack) {
-      if (enableBroadcast) {
+      if (broadcast) {
         await localAudioTrack.unmute();
       } else {
         await localAudioTrack.mute();
@@ -931,6 +928,11 @@ class JitsiRTCClient extends AVClient {
 
 Hooks.on("init", () => {
   CONFIG.WebRTC.clientClass = JitsiRTCClient;
+
+  AVSettings.VOICE_MODES = {
+    ALWAYS: "always",
+    PTT: "ptt",
+  };
 
   game.settings.register("jitsirtc", "allowExternalUsers", {
     name: "Allow standalone Jitsi users",
