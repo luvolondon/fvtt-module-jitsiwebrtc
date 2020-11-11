@@ -104,5 +104,12 @@ v0.4.3
 * Update the values read from config.js with better defaults
 * Reduce the number of render calls to hopefully make UI updates work better
 
+v0.4.4
+* Pass config object with initializing to enable additional performance settings
+* Only block the toggling of audio off of mute when PTT is set
+* Blank out the video track when the remote user is hidden
+* Remove the voice activation option as this is natively handled by Jitsi
+* Port the "Use full Jitsi Meet client" from WebRTCTweaks
+
 # License
 This Foundry VTT module is licensed under a Creative Commons Attribution 4.0 International License.
