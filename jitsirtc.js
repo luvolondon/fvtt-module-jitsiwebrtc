@@ -339,7 +339,7 @@ class JitsiRTCClient extends AVClient {
      *                                            set
      */
   async setUserVideo(userId, videoElement) {
-    this.debug("Seting video element:", videoElement, "for user:", userId);
+    this.debug("Setting video element:", videoElement, "for user:", userId);
 
     // If this if for our local user, attach our video track using Jitsi
     if (userId === game.user.id) {
@@ -418,7 +418,7 @@ class JitsiRTCClient extends AVClient {
       }
 
       this._room = connectionSettings.room;
-      this.debug("Meeting room name: ", this._room);
+      this.debug("Meeting room name:", this._room);
 
       // Add the room name to the bosh & websocket URLs to ensure all users end up on the same shard
       config.bosh += `?room=${this._room}`;
@@ -481,7 +481,7 @@ class JitsiRTCClient extends AVClient {
     let localTracks = [];
     if (audioDevice) devlist.push("audio");
     if (videoDevice) devlist.push("video");
-    this.debug("Device list for createLocalTracks: ", devlist);
+    this.debug("Device list for createLocalTracks:", devlist);
 
     // Create our tracks
     if (devlist.length > 0) {
@@ -565,7 +565,7 @@ class JitsiRTCClient extends AVClient {
   _loginSuccess(resolve) {
     // Set up room handle
     this._jitsiConference = this._jitsiConnection.initJitsiConference(this._room, config);
-    this.debug("conference joined: ", this._jitsiConference);
+    this.debug("conference joined:", this._jitsiConference);
 
     // Set our jitsi username to our FVTT user ID
     this._jitsiConference.setDisplayName(game.user.id);
@@ -644,7 +644,7 @@ class JitsiRTCClient extends AVClient {
     }
     const participant = jitsiTrack.getParticipantId();
 
-    this.debug("remote track type ", jitsiTrack.getType(), " added for participant ", participant);
+    this.debug("remote track type", jitsiTrack.getType(), "added for participant", participant);
 
     const userId = this._idCache[participant];
 
@@ -652,9 +652,9 @@ class JitsiRTCClient extends AVClient {
       const userStream = this.getMediaStreamForUser(userId);
       userStream.addTrack(jitsiTrack.track);
     } else {
-      this.debug("Remote track of unknown participant ", participant, " added.");
+      this.debug("Remote track of unknown participant", participant, "added.");
     }
-    this.debug("remote track add finished, type: ", jitsiTrack.getType(), " participant: ", participant);
+    this.debug("remote track add finished, type:", jitsiTrack.getType(), "participant:", participant);
 
     if (jitsiTrack.getType() === "video") {
       this.master.render();
@@ -672,7 +672,7 @@ class JitsiRTCClient extends AVClient {
     }
     const participant = jitsiTrack.getParticipantId();
 
-    this.debug("remote track type ", jitsiTrack.getType(), " removed for participant ", participant);
+    this.debug("remote track type", jitsiTrack.getType(), "removed for participant", participant);
 
     const userId = this._idCache[participant];
 
@@ -708,11 +708,12 @@ class JitsiRTCClient extends AVClient {
       return;
     }
     const participant = jitsiTrack.getParticipantId();
+    const isMuted = jitsiTrack.isMuted();
 
-    this.debug("mute changed for ", jitsiTrack.getType(), " for participant ", participant);
+    this.debug("mute changed to", isMuted, "for", jitsiTrack.getType(), "for participant", participant);
 
     if (jitsiTrack.getType() === "video") {
-      if (jitsiTrack.isMuted()) {
+      if (isMuted) {
         this._onRemoteTrackRemove(jitsiTrack);
       } else {
         this._onRemoteTrackAdded(jitsiTrack);
@@ -736,7 +737,7 @@ class JitsiRTCClient extends AVClient {
   }
 
   _addExternalUserData(id) {
-    this.debug("Adding external Jitsi user: ", id);
+    this.debug("Adding external Jitsi user:", id);
 
     // Create user data for the external user
     const data = {
@@ -793,11 +794,11 @@ class JitsiRTCClient extends AVClient {
     this._usernameCache[displayName] = id;
     this._idCache[id] = displayName;
     this._streams[displayName] = new MediaStream();
-    this.debug("user joined: ", displayName);
+    this.debug("user joined:", displayName);
   }
 
   _onUserLeft(id) {
-    this.debug("user left: ", this._idCache[id]);
+    this.debug("user left:", this._idCache[id]);
 
     delete this._streams[this._idCache[id]];
     delete this._usernameCache[this._idCache[id]];
