@@ -111,5 +111,8 @@ v0.4.4
 * Remove the voice activation option as this is natively handled by Jitsi
 * Port the "Use full Jitsi Meet client" from WebRTCTweaks
 
+v0.4.5
+* Call renders more often, but with a debounce delay
+
 # License
 This Foundry VTT module is licensed under a Creative Commons Attribution 4.0 International License.
