@@ -22,6 +22,7 @@ class JitsiRTCClient extends AVClient {
     this._localAudioEnabled = false;
     this._localAudioBroadcastEnabled = false;
     this._localVideoEnabled = false;
+    this._useJitsiMeet = false;
 
     this.jitsiURL = null;
   }
@@ -45,6 +46,13 @@ class JitsiRTCClient extends AVClient {
     } else {
       // TODO: set up server types for beta / defult jitsi servers instead of just the "FVTT" type
       this._server = JitsiRTCClient.defaultJitsiServer;
+    }
+
+    // Don't fully initialize if client has enabled the option to use the full Jitsi Meet client
+    if (game.settings.get("jitsirtc", "useJitsiMeet")) {
+      this.debug("useJitsiMeet set, not initializing JitsiRTC");
+      this._useJitsiMeet = true;
+      return true;
     }
 
     // Load lib-jitsi-meet and config values from the selected server
@@ -75,6 +83,14 @@ class JitsiRTCClient extends AVClient {
      */
   async connect() {
     this.debug("JitsiRTCClient connect");
+
+    // If useJitsiMeet is enabled, send a join message instead of connecting
+    if (this._useJitsiMeet) {
+      this.debug("useJitsiMeet set, not connecting to JitsiRTC");
+      this._sendJoinMessage();
+      return true;
+    }
+
     await this.disconnect(); // Disconnect first, just in case
 
     // TODO check for success with these before returning?
@@ -244,6 +260,11 @@ class JitsiRTCClient extends AVClient {
      *                                  disabled (false)
      */
   async toggleAudio(enable) {
+    // If useJitsiMeet is enabled, return
+    if (this._useJitsiMeet) {
+      return;
+    }
+
     this.debug("Toggling audio:", enable);
     if (!this._localAudioBroadcastEnabled && this.settings.client.voice.mode === "ptt") return;
     this._localAudioEnabled = enable;
@@ -266,6 +287,11 @@ class JitsiRTCClient extends AVClient {
      * @param {boolean} broadcast   Whether outbound audio should be sent to connected peers or not?
      */
   async toggleBroadcast(broadcast) {
+    // If useJitsiMeet is enabled, return
+    if (this._useJitsiMeet) {
+      return;
+    }
+
     this.debug("Toggling Broadcast audio:", broadcast);
 
     this._localAudioBroadcastEnabled = broadcast;
@@ -287,6 +313,11 @@ class JitsiRTCClient extends AVClient {
      *                                  disabled (false)
      */
   async toggleVideo(enable) {
+    // If useJitsiMeet is enabled, return
+    if (this._useJitsiMeet) {
+      return;
+    }
+
     this.debug("Toggling video:", enable);
     this._localVideoEnabled = enable;
     const localVideoTrack = this._jitsiConference.getLocalVideoTrack();
@@ -905,6 +936,21 @@ class JitsiRTCClient extends AVClient {
     delete config.callStatsCustomScriptUrl;
   }
 
+  _sendJoinMessage() {
+    const roomId = this.settings.get("world", "server.room");
+
+    const url = `https://${this._server}/${roomId}#userInfo.displayName=%22${game.user.id}%22`;
+
+    const chatData = {
+      content: `<a href="${url}">Join Jitsi Meeting</a>`,
+      speaker: {
+        scene: null, actor: null, token: null, alias: "JitsiRTC",
+      },
+      whisper: [game.user.id],
+    };
+    ChatMessage.create(chatData, {});
+  }
+
   /**
    * Display debug messages on the console if debugging is enabled
    * @param {...*} args      Arguments to console.log
@@ -955,6 +1001,15 @@ Hooks.on("init", () => {
         game.settings.set("jitsirtc", "externalUsersUrl", game.webrtc.client.jitsiURL);
       }
     },
+  });
+  game.settings.register("jitsirtc", "useJitsiMeet", {
+    name: "Use full Jitsi Meet client",
+    hint: "Use the full Jitsi Meet web interface instead of the built-in audio/video display",
+    scope: "client",
+    config: true,
+    default: false,
+    type: Boolean,
+    onChange: () => window.location.reload(),
   });
   game.settings.register("jitsirtc", "customUrls", {
     name: "Use custom Jitsi URLs",
