@@ -24,6 +24,8 @@ class JitsiRTCClient extends AVClient {
     this._localVideoEnabled = false;
     this._useJitsiMeet = false;
 
+    this._render = debounce(this.master.render.bind(this), 2000);
+
     this.jitsiURL = null;
   }
 
@@ -361,6 +363,9 @@ class JitsiRTCClient extends AVClient {
         userVideo.src = window.URL.createObjectURL(userStream);
       }
     }
+
+    const event = new CustomEvent("webrtcVideoSet", { detail: { userStream, userId } });
+    videoElement.dispatchEvent(event);
   }
 
   /* -------------------------------------------- */
@@ -656,9 +661,7 @@ class JitsiRTCClient extends AVClient {
     }
     this.debug("remote track add finished, type:", jitsiTrack.getType(), "participant:", participant);
 
-    if (jitsiTrack.getType() === "video") {
-      this.master.render();
-    }
+    this._render();
   }
 
 
@@ -681,9 +684,7 @@ class JitsiRTCClient extends AVClient {
       userStream.removeTrack(jitsiTrack.track);
     }
 
-    if (jitsiTrack.getType() === "video") {
-      this.master.render();
-    }
+    this._render();
   }
 
   /**
@@ -795,6 +796,8 @@ class JitsiRTCClient extends AVClient {
     this._idCache[id] = displayName;
     this._streams[displayName] = new MediaStream();
     this.debug("user joined:", displayName);
+
+    this._render();
   }
 
   _onUserLeft(id) {
@@ -809,6 +812,8 @@ class JitsiRTCClient extends AVClient {
       delete this._externalUserCache[id];
       game.users.delete(id);
     }
+
+    this._render();
   }
 
   /**
