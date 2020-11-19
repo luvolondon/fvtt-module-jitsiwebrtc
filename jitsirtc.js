@@ -947,7 +947,7 @@ class JitsiRTCClient extends AVClient {
     const url = `https://${this._server}/${roomId}#userInfo.displayName=%22${game.user.id}%22`;
 
     const chatData = {
-      content: `<a href="${url}">Join Jitsi Meeting</a>`,
+      content: `<a href="${url}">${game.i18n.localize("JITSIRTC.joinMessage")}</a>`,
       speaker: {
         scene: null, actor: null, token: null, alias: "JitsiRTC",
       },
@@ -986,8 +986,8 @@ Hooks.on("init", () => {
   };
 
   game.settings.register("jitsirtc", "allowExternalUsers", {
-    name: "Allow standalone Jitsi users",
-    hint: "If a user joins the Jitsi meeting outside of FVTT, show them to players in the FVTT interface. (URL will visible to users here after enabling this option).",
+    name: "JITSIRTC.allowExternalUsers",
+    hint: "JITSIRTC.allowExternalUsersHint",
     scope: "world",
     config: true,
     default: false,
@@ -995,8 +995,8 @@ Hooks.on("init", () => {
     onChange: () => window.location.reload(),
   });
   game.settings.register("jitsirtc", "externalUsersUrl", {
-    name: "Standalone Jitsi URL (read-only)",
-    hint: "The URL for standalone Jitsi users to join the conference. Cannot be changed.",
+    name: "JITSIRTC.externalUsersUrl",
+    hint: "JITSIRTC.externalUsersUrlHint",
     scope: "client",
     config: game.settings.get("jitsirtc", "allowExternalUsers"),
     default: "",
@@ -1008,8 +1008,8 @@ Hooks.on("init", () => {
     },
   });
   game.settings.register("jitsirtc", "useJitsiMeet", {
-    name: "Use full Jitsi Meet client",
-    hint: "Use the full Jitsi Meet web interface instead of the built-in audio/video display",
+    name: "JITSIRTC.useJitsiMeet",
+    hint: "JITSIRTC.useJitsiMeetHint",
     scope: "client",
     config: true,
     default: false,
@@ -1017,8 +1017,8 @@ Hooks.on("init", () => {
     onChange: () => window.location.reload(),
   });
   game.settings.register("jitsirtc", "customUrls", {
-    name: "Use custom Jitsi URLs",
-    hint: "Enable to allow custom MUC, Focus, or Bosh URLs. (Settings will be available here after enabling this option).",
+    name: "JITSIRTC.customUrls",
+    hint: "JITSIRTC.customUrlsHint",
     scope: "world",
     config: true,
     default: false,
@@ -1026,8 +1026,8 @@ Hooks.on("init", () => {
     onChange: (value) => game.webrtc.client._useCustomUrls(value),
   });
   game.settings.register("jitsirtc", "domainUrl", {
-    name: "Jitsi Domain URL",
-    hint: 'config["hosts"]["domain"] in jitsi-meet config.js',
+    name: "JITSIRTC.domainUrl",
+    hint: "JITSIRTC.domainUrlHint",
     default: "",
     scope: "world",
     type: String,
@@ -1035,8 +1035,8 @@ Hooks.on("init", () => {
     onChange: () => window.location.reload(),
   });
   game.settings.register("jitsirtc", "mucUrl", {
-    name: "Jitsi MUC URL",
-    hint: 'config["hosts"]["muc"] in jitsi-meet config.js',
+    name: "JITSIRTC.mucUrl",
+    hint: "JITSIRTC.mucUrlHint",
     default: "",
     scope: "world",
     type: String,
@@ -1044,8 +1044,8 @@ Hooks.on("init", () => {
     onChange: () => window.location.reload(),
   });
   game.settings.register("jitsirtc", "focusUrl", {
-    name: "Jitsi Focus URL",
-    hint: 'config["hosts"]["focus"] in jitsi-meet config.js',
+    name: "JITSIRTC.focusUrl",
+    hint: "JITSIRTC.focusUrlHint",
     default: "",
     scope: "world",
     type: String,
@@ -1053,8 +1053,8 @@ Hooks.on("init", () => {
     onChange: () => window.location.reload(),
   });
   game.settings.register("jitsirtc", "boshUrl", {
-    name: "Jitsi Bosh URL",
-    hint: 'config["bosh"] in jitsi-meet config.js',
+    name: "JITSIRTC.boshUrl",
+    hint: "JITSIRTC.boshUrlHint",
     default: "",
     scope: "world",
     type: String,
@@ -1062,8 +1062,8 @@ Hooks.on("init", () => {
     onChange: () => window.location.reload(),
   });
   game.settings.register("jitsirtc", "websocketUrl", {
-    name: "Jitsi Websocket URL",
-    hint: 'config["wbesocket"] in jitsi-meet config.js',
+    name: "JITSIRTC.websocketUrl",
+    hint: "JITSIRTC.websocketUrlHint",
     default: "",
     scope: "world",
     type: String,
@@ -1071,10 +1071,10 @@ Hooks.on("init", () => {
     onChange: () => window.location.reload(),
   });
   game.settings.register("jitsirtc", "debug", {
-    name: "Enable debug logging",
-    hint: "Enables CONFIG.debug.av and CONFIG.debug.avclient for extra logging",
+    name: "JITSIRTC.debug",
+    hint: "",
     scope: "world",
-    config: false,
+    config: true,
     default: false,
     type: Boolean,
     onChange: (value) => {

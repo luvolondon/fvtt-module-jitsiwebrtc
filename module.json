@@ -11,5 +11,12 @@
   "download": "https://github.com/luvolondon/fvtt-module-jitsiwebrtc/archive/v0.4.5.zip",
   "minimumCoreVersion": "0.7.2",
   "compatibleCoreVersion": "0.7.6",
-  "scripts": ["jitsirtc.js"]
+  "scripts": ["jitsirtc.js"],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ]
 }
