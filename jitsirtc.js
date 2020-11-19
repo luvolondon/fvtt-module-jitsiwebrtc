@@ -494,7 +494,6 @@ class JitsiRTCClient extends AVClient {
         localTracks = await JitsiMeetJS.createLocalTracks({
           devices: devlist,
           resolution: 240,
-          disableSimulcast: false,
           cameraDeviceId: videoDevice,
           micDeviceId: audioDevice,
           constraints: {
@@ -915,8 +914,8 @@ class JitsiRTCClient extends AVClient {
       config.hosts.domain = game.settings.get("jitsirtc", "domainUrl");
       config.hosts.muc = game.settings.get("jitsirtc", "mucUrl");
       config.hosts.focus = game.settings.get("jitsirtc", "focusUrl");
-      config.hosts.bosh = game.settings.get("jitsirtc", "boshUrl");
-      config.hosts.websocket = game.settings.get("jitsirtc", "websocketUrl");
+      config.bosh = game.settings.get("jitsirtc", "boshUrl");
+      config.websocket = game.settings.get("jitsirtc", "websocketUrl");
     }
 
     // Create p2p config object if it doesn't exist
