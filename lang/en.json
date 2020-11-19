@@ -19,5 +19,7 @@
     "JITSIRTC.websocketUrlHint": "config[\"websocket\"] in jitsi-meet config.js",
     "JITSIRTC.debug": "Enable debug logging",
     "JITSIRTC.debugHint": "Enables CONFIG.debug.av and CONFIG.debug.avclient for extra logging",
-    "JITSIRTC.joinMessage": "Join Jitsi Meeting"
+    "JITSIRTC.joinMessage": "Join Jitsi Meeting",
+
+    "WEBRTC.FVTTSignalingServer": "Public Jitsi Meet Beta (beta.meet.jit.si)"
 }
