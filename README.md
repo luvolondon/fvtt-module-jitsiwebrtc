@@ -114,5 +114,11 @@ v0.4.4
 v0.4.5
 * Call renders more often, but with a debounce delay
 
+v0.4.6
+* Update compatibility to FVTT v0.7.7
+* Fix custom server URL settings
+* Add localization options (English only for now)
+* Show that the default server is using `beta.meet.jit.si`
+
 # License
 This Foundry VTT module is licensed under a Creative Commons Attribution 4.0 International License.
