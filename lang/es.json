@@ -1,0 +1,28 @@
+{
+	"I18N.LANGUAGE": "Español",
+	"I18N.MAINTAINERS": "@Viriato139ac#0342",
+	
+    "JITSIRTC.allowExternalUsers": "Permitir conectar a usuarios externos",
+    "JITSIRTC.allowExternalUsersHint": "Se mostrarán en la interfaz de FVTT a todos los usuarios que se conecten a la videoconferencia de manera externa. (La URL para conectarse se mostrará una vez se habilite esta opción).",
+    "JITSIRTC.externalUsersUrl": "URL externa de Jitsi (solo lectura)",
+    "JITSIRTC.externalUsersUrlHint": "URL de conexión para los usuarios externos de Jitsi. No se puede cambiar.",
+    "JITSIRTC.useJitsiMeet": "Usar el cliente completo de Jitsi Meet",
+    "JITSIRTC.useJitsiMeetHint": "Usa la inferfaz web completa de Jitsi Meet en lugar del A/V integrado en FVTT",
+    "JITSIRTC.customUrls": "Usar URLs Jitsi personalizadas",
+    "JITSIRTC.customUrlsHint": "Activar la personalización de URLs MUC, Focus y Bosh. (Estos ajustes estarán disponibles una vez activada esta opción).",
+    "JITSIRTC.domainUrl": "URL Dominio Jitsi",
+    "JITSIRTC.domainUrlHint": "config[\"hosts\"][\"domain\"] en el config.js de jitsi-meet",
+    "JITSIRTC.mucUrl": "URL MUC Jitsi",
+    "JITSIRTC.mucUrlHint": "config[\"hosts\"][\"muc\"] en el config.js de jitsi-meet",
+    "JITSIRTC.focusUrl": "Focus URL Jitsi",
+    "JITSIRTC.focusUrlHint": "config[\"hosts\"][\"focus\"] en el config.js de jitsi-meet",
+    "JITSIRTC.boshUrl": "URL Bosh Jitsi",
+    "JITSIRTC.boshUrlHint": "config[\"bosh\"] en el config.js de jitsi-meet",
+    "JITSIRTC.websocketUrl": "URL Websocket Jitsi",
+    "JITSIRTC.websocketUrlHint": "config[\"websocket\"] en el config.js de jitsi-meet",
+    "JITSIRTC.debug": "Habilitar registro de errores",
+    "JITSIRTC.debugHint": "Habilita CONFIG.debug.av y CONFIG.debug.avclient para realizar un registro detallado de errores",
+    "JITSIRTC.joinMessage": "Unirse a Videoconferencia Jitsi",
+
+    "WEBRTC.FVTTSignalingServer": "Jitsi Meet Beta Público (beta.meet.jit.si)"
+}
