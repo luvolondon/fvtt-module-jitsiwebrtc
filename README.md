@@ -120,5 +120,9 @@ v0.4.6
 * Add localization options (English only for now)
 * Show that the default server is using `beta.meet.jit.si`
 
+v0.4.7
+* Add Spanish translation thanks to José E. Lozano
+* Update jitsi config settings for more consistency and performance
+
 # License
 This Foundry VTT module is licensed under a Creative Commons Attribution 4.0 International License.
