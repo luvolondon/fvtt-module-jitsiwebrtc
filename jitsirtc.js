@@ -927,13 +927,27 @@ class JitsiRTCClient extends AVClient {
     config.enableP2P = false;
     config.p2p.enabled = false;
 
-    // Disable simulcast and enable layer suspension for performance
+    // Disable simulcast for performance
     config.disableSimulcast = true;
-    config.enableLayerSuspension = true;
 
     // Disable audio detections for performance
     config.enableNoAudioDetection = false;
     config.enableNoisyMicDetection = false;
+
+    // Configure audio detection
+    config.disableAudioLevels = false;
+    config.audioLevelsInterval = 500;
+
+    // Configure settings for consistant video
+    config.enableLayerSuspension = false;
+    config.disableSuspendVideo = true;
+    config.channelLastN = -1;
+    config.adaptiveLastN = false;
+    delete config.lastNLimits;
+
+    // Disable auto-muted settings
+    delete config.startAudioMuted;
+    delete config.startVideoMuted;
 
     // Remove callStats settings to avoid errors
     delete config.callStatsID;
