@@ -391,14 +391,17 @@ class JitsiRTCClient extends AVClient {
     if (keys.some((k) => ["client.videoSrc", "client.audioSrc"].includes(k))
       || hasProperty(changed, `users.${game.user.id}.canBroadcastVideo`)
       || hasProperty(changed, `users.${game.user.id}.canBroadcastAudio`)) {
-      // TODO: See if we can handle this without a full reload
-      window.location.reload();
+      this.master.connect();
     }
 
     // Change voice broadcasting mode
     if (keys.some((k) => ["client.voice.mode"].includes(k))) {
-      // TODO: See if we can handle this without a full reload
-      window.location.reload();
+      this.master.connect();
+    }
+
+    // Change audio sink device
+    if (keys.some((k) => ["client.audioSink"].includes(k))) {
+      this.master.connect();
     }
   }
 
@@ -642,7 +645,7 @@ class JitsiRTCClient extends AVClient {
    */
   _onDisconnect(...args) {
     this.debug("Disconnected", args);
-    this.master.reestablish();
+    this.master.connect();
   }
 
   /**
