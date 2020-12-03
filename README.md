@@ -124,5 +124,10 @@ v0.4.7
 * Add Spanish translation thanks to José E. Lozano
 * Update jitsi config settings for more consistency and performance
 
+v0.4.8
+* Prevent throwing an error when disconnect is called
+* Allow setting the audio output device
+* Don't do a full page reload when changing settings
+
 # License
 This Foundry VTT module is licensed under a Creative Commons Attribution 4.0 International License.
