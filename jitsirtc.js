@@ -345,6 +345,10 @@ class JitsiRTCClient extends AVClient {
 
     // If this if for our local user, attach our video track using Jitsi
     if (userId === game.user.id) {
+      if (!this._jitsiConference) {
+        this.debug("Attempted to set user video with no active Jitsi Conference; skipping");
+        return;
+      }
       const localVideoTrack = this._jitsiConference.getLocalVideoTrack();
       if (localVideoTrack && videoElement) {
         localVideoTrack.attach(videoElement);
