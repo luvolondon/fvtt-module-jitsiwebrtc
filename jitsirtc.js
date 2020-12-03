@@ -368,6 +368,9 @@ class JitsiRTCClient extends AVClient {
       }
     }
 
+    // Set audio output
+    userVideo.setSinkId(this.settings.client.audioSink);
+
     const event = new CustomEvent("webrtcVideoSet", { detail: { userStream, userId } });
     videoElement.dispatchEvent(event);
   }
