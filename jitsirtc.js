@@ -12,8 +12,8 @@ class JitsiRTCClient extends AVClient {
     this._jitsiConference = null;
     this._server = null;
     this._room = null;
-    this._streams = {};
     this._usernameCache = {};
+    this._participantCache = {};
     this._idCache = {};
     this._externalUserCache = {};
     this._loginSuccessHandler = null;
@@ -115,6 +115,11 @@ class JitsiRTCClient extends AVClient {
   async disconnect() {
     this.debug("JitsiRTCClient disconnect");
     let disconnected = false;
+
+    // Dispose of tracks
+    await this._closeLocalTracks();
+
+    // Leave the room
     if (this._jitsiConference) {
       disconnected = true;
       try {
@@ -125,6 +130,7 @@ class JitsiRTCClient extends AVClient {
       this._jitsiConference = null;
     }
 
+    // Close the connections
     if (this._jitsiConnection) {
       disconnected = true;
       this._jitsiConnection.removeEventListener(
@@ -229,9 +235,9 @@ class JitsiRTCClient extends AVClient {
      * @return {MediaStream|null}    The MediaStream for the user, or null if the user does not have
      *                                one
      */
-  getMediaStreamForUser(userId) {
-    const stream = this._streams[userId];
-    return stream;
+  getMediaStreamForUser() {
+    this.debug("getMediaStreamForUser called but is not used with JitsiRTC");
+    return null;
   }
 
   /* -------------------------------------------- */
@@ -356,22 +362,33 @@ class JitsiRTCClient extends AVClient {
       return;
     }
 
-    // For all other users, attach the created streams
-    const userStream = this.getMediaStreamForUser(userId);
-    const userVideo = videoElement;
+    // For all other users, get their video and audio streams
+    const jitsiParticipant = this._participantCache[userId];
+    const userVideoTrack = jitsiParticipant.getTracksByMediaType("video")[0];
+    const userAudioTrack = jitsiParticipant.getTracksByMediaType("audio")[0];
 
-    if (userStream && userVideo) {
-      try {
-        userVideo.srcObject = userStream;
-      } catch (error) {
-        userVideo.src = window.URL.createObjectURL(userStream);
-      }
+    // Add the video for the user
+    if (userVideoTrack) {
+      userVideoTrack.attach(videoElement);
     }
 
-    // Set audio output
-    userVideo.setSinkId(this.settings.client.audioSink);
+    // Get the audio element for the user
+    const audioElement = this._getUserAudioElement(userId, videoElement);
 
-    const event = new CustomEvent("webrtcVideoSet", { detail: { userStream, userId } });
+    // Add the audio for the user
+    if (userAudioTrack && audioElement) {
+      // Set audio output
+      userAudioTrack.setAudioOutput(this.settings.client.audioSink);
+
+      // Attach the track
+      userAudioTrack.attach(audioElement);
+
+      // Set the parameters
+      audioElement.volume = this.settings.getUser(userId).volume;
+      audioElement.muted = this.settings.get("client", "muteAll");
+    }
+
+    const event = new CustomEvent("webrtcVideoSet", { detail: userId });
     videoElement.dispatchEvent(event);
   }
 
@@ -402,6 +419,11 @@ class JitsiRTCClient extends AVClient {
     // Change audio sink device
     if (keys.some((k) => ["client.audioSink"].includes(k))) {
       this.master.connect();
+    }
+
+    // Change muteAll
+    if (keys.some((k) => ["client.muteAll"].includes(k))) {
+      this._muteAll();
     }
   }
 
@@ -541,7 +563,6 @@ class JitsiRTCClient extends AVClient {
    */
   async _addLocalTracks(localTracks) {
     const addedTracks = [];
-    const localStream = new MediaStream();
 
     // Add the track to the conference
     localTracks.forEach((localTrack) => {
@@ -552,12 +573,6 @@ class JitsiRTCClient extends AVClient {
 
     // Wait for all tracks to be added
     await Promise.all(addedTracks);
-
-    // Add the track to our user's stream
-    this._jitsiConference.getLocalTracks().forEach((localTrack) => {
-      localStream.addTrack(localTrack.track);
-    });
-    this._streams[game.user.id] = localStream;
   }
 
   /**
@@ -566,9 +581,11 @@ class JitsiRTCClient extends AVClient {
    */
   async _closeLocalTracks() {
     const removedTracks = [];
-    this._jitsiConference.getLocalTracks().forEach((localTrack) => {
-      removedTracks.push(localTrack.dispose());
-    });
+    if (this._jitsiConference) {
+      this._jitsiConference.getLocalTracks().forEach((localTrack) => {
+        removedTracks.push(localTrack.dispose());
+      });
+    }
     return Promise.all(removedTracks);
   }
 
@@ -610,14 +627,6 @@ class JitsiRTCClient extends AVClient {
       this._onTrackMuteChanged.bind(this),
     );
     this._jitsiConference.on(
-      JitsiMeetJS.events.conference.DOMINANT_SPEAKER_CHANGED,
-      this._onDominantSpeakerChanged.bind(this),
-    );
-    this._jitsiConference.on(
-      JitsiMeetJS.events.conference.TALK_WHILE_MUTED,
-      this._onTalkWhileMuted.bind(this),
-    );
-    this._jitsiConference.on(
       JitsiMeetJS.events.conference.USER_JOINED,
       this._onUserJoined.bind(this),
     );
@@ -653,23 +662,11 @@ class JitsiRTCClient extends AVClient {
    * @param track JitsiTrack object
    */
   _onRemoteTrackAdded(jitsiTrack) {
-    if (jitsiTrack.isLocal()) {
-      return;
-    }
     const participant = jitsiTrack.getParticipantId();
-
-    this.debug("remote track type", jitsiTrack.getType(), "added for participant", participant);
-
     const userId = this._idCache[participant];
+    this.debug("remote track type", jitsiTrack.getType(), "added for participant", participant, "(", userId, ")");
 
-    if (userId != null) {
-      const userStream = this.getMediaStreamForUser(userId);
-      userStream.addTrack(jitsiTrack.track);
-    } else {
-      this.debug("Remote track of unknown participant", participant, "added.");
-    }
-    this.debug("remote track add finished, type:", jitsiTrack.getType(), "participant:", participant);
-
+    // Call a debounced render
     this._render();
   }
 
@@ -679,20 +676,11 @@ class JitsiRTCClient extends AVClient {
    * @param track JitsiTrack object
    */
   _onRemoteTrackRemove(jitsiTrack) {
-    if (jitsiTrack.isLocal()) {
-      return;
-    }
     const participant = jitsiTrack.getParticipantId();
-
-    this.debug("remote track type", jitsiTrack.getType(), "removed for participant", participant);
-
     const userId = this._idCache[participant];
+    this.debug("remote track type", jitsiTrack.getType(), "removed for participant", participant, "(", userId, ")");
 
-    if (userId != null) {
-      const userStream = this.getMediaStreamForUser(userId);
-      userStream.removeTrack(jitsiTrack.track);
-    }
-
+    // Call a debounced render
     this._render();
   }
 
@@ -723,11 +711,7 @@ class JitsiRTCClient extends AVClient {
     this.debug("mute changed to", isMuted, "for", jitsiTrack.getType(), "for participant", participant);
 
     if (jitsiTrack.getType() === "video") {
-      if (isMuted) {
-        this._onRemoteTrackRemove(jitsiTrack);
-      } else {
-        this._onRemoteTrackAdded(jitsiTrack);
-      }
+      this._render();
     }
   }
 
@@ -737,13 +721,6 @@ class JitsiRTCClient extends AVClient {
    */
   _onDominantSpeakerChanged(id) {
     this.debug("dominant speaker changed to", id);
-  }
-
-  /**
-   * Handles the local user talking while having the microphone muted
-   */
-  _onTalkWhileMuted() {
-    this.debug("talking while muted");
   }
 
   _addExternalUserData(id) {
@@ -802,8 +779,8 @@ class JitsiRTCClient extends AVClient {
     }
 
     this._usernameCache[displayName] = id;
+    this._participantCache[displayName] = participant;
     this._idCache[id] = displayName;
-    this._streams[displayName] = new MediaStream();
     this.debug("user joined:", displayName);
 
     this._render();
@@ -812,8 +789,8 @@ class JitsiRTCClient extends AVClient {
   _onUserLeft(id) {
     this.debug("user left:", this._idCache[id]);
 
-    delete this._streams[this._idCache[id]];
     delete this._usernameCache[this._idCache[id]];
+    delete this._participantCache[this._idCache[id]];
     delete this._idCache[id];
 
     // Remove the temporary user entity if they are an external Jitsi user
@@ -852,6 +829,63 @@ class JitsiRTCClient extends AVClient {
     }
 
     return null;
+  }
+
+  /**
+   * Obtain a reference to the video.user-audio which plays the audio channel for a requested
+   * Foundry User.
+   * If the element doesn't exist, but a video element does, it will create it.
+   * @param {string} userId                   The ID of the User entity
+   * @param {HTMLVideoElement} videoElement   The HTMLVideoElement of the user
+   * @return {HTMLVideoElement|null}
+   */
+  _getUserAudioElement(userId, videoElement = null) {
+    // Find an existing audio element
+    let audioElement = ui.webrtc.element.find(`.camera-view[data-user=${userId}] audio.user-audio`)[0];
+
+    // If one doesn't exist, create it
+    if (!audioElement && videoElement) {
+      audioElement = document.createElement("audio");
+      audioElement.className = "user-audio";
+      audioElement.autoplay = true;
+      videoElement.after(audioElement);
+
+      // Bind volume control
+      ui.webrtc.element.find(`.camera-view[data-user=${userId}] .webrtc-volume-slider`).change(this._onVolumeChange.bind(this));
+    }
+
+    return audioElement;
+  }
+
+  /**
+   * Change volume control for a stream
+   * @param {Event} event   The originating change event from interaction with the range input
+   * @private
+   */
+  _onVolumeChange(event) {
+    const input = event.currentTarget;
+    const box = input.closest(".camera-view");
+    const volume = AudioHelper.inputToVolume(input.value);
+    box.getElementsByTagName("audio")[0].volume = volume;
+  }
+
+  /**
+   * Mute all audio tracks
+   * @private
+   */
+  _muteAll() {
+    this.debug("Muting all users");
+
+    const muted = this.settings.get("client", "muteAll");
+
+    this.getConnectedUsers().forEach((userId) => {
+      if (userId !== game.user.id) {
+        const audioElement = this._getUserAudioElement(userId);
+        if (audioElement) {
+          audioElement.muted = muted;
+        }
+      }
+    });
   }
 
   /**
