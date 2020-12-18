@@ -37,7 +37,7 @@ jobs:
       - name: Create tag changelog
         id: changelog
         run: |
-          CHANGELOG=$(git log --pretty=format:%s ${{ needs.check_version.outputs.module_previous_version }}..HEAD)
+          CHANGELOG=$(git log --reverse --pretty=oneline --abbrev-commit ${{ needs.check_version.outputs.module_previous_version }}..HEAD)
           # Support for multiline, see
           # https://github.com/actions/create-release/pull/11#issuecomment-640071918
           CHANGELOG="${CHANGELOG//'%'/'%25'}"
