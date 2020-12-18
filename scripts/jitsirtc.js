@@ -762,7 +762,7 @@ class JitsiRTCClient extends AVClient {
     let displayName = participant._displayName;
 
     // Handle Jitsi users who join the meeting directly
-    if (!game.users.entities.find((u) => u.id === displayName)) {
+    if (!game.users.get(displayName)) {
       // Save the Jitsi display name into an external users cache
       this._externalUserCache[id] = displayName || "Jitsi User";
 
@@ -776,6 +776,13 @@ class JitsiRTCClient extends AVClient {
         // Kick the user
         this._jitsiConference.kickParticipant(id);
       }
+    }
+
+    const fvttUser = game.users.get(displayName);
+    if (!fvttUser.active) {
+      // Force the user to be active. If they are signing in to Jitsi, they should be online.
+      this.debug("Joining user", displayName, "is not listed as active. Setting to active.");
+      fvttUser.active = true;
     }
 
     this._usernameCache[displayName] = id;
