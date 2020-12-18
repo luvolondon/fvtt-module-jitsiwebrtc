@@ -129,5 +129,12 @@ v0.4.8
 * Allow setting the audio output device
 * Don't do a full page reload when changing settings
 
+v0.4.9
+* Handle audio/video elements through our module instead of relying on FVTT
+* Switch primary branch to `main`
+* Move `jitsirtc.js` into a scripts folder and remove deprecated `lib-jitsi-meet.min.js`
+* Add GitHub workflow for automated release process
+* Update compatibility to FVTT v0.7.9
+
 # License
 This Foundry VTT module is licensed under a Creative Commons Attribution 4.0 International License.
