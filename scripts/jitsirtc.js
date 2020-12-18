@@ -65,7 +65,7 @@ class JitsiRTCClient extends AVClient {
     this._setConfigValues();
 
     if (this.settings.get("client", "voice.mode") === "activity") {
-      this.debug("disabling voice activation mode as it is handled natively by Jitsi");
+      this.debug("Disabling voice activation mode as it is handled natively by Jitsi");
       this.settings.set("client", "voice.mode", "always");
     }
 
@@ -352,7 +352,7 @@ class JitsiRTCClient extends AVClient {
     // If this if for our local user, attach our video track using Jitsi
     if (userId === game.user.id) {
       if (!this._jitsiConference) {
-        this.debug("Attempted to set user video with no active Jitsi Conference; skipping");
+        this.warn("Attempted to set user video with no active Jitsi Conference; skipping");
         return;
       }
       const localVideoTrack = this._jitsiConference.getLocalVideoTrack();
@@ -450,7 +450,7 @@ class JitsiRTCClient extends AVClient {
 
       // Set a room name if one doesn't yet exist
       if (!connectionSettings.room) {
-        this.debug("No meeting room set, creating random name.");
+        this.warn("No meeting room set, creating random name.");
         this.settings.set("world", "server.room", randomID(32));
       }
 
@@ -596,7 +596,7 @@ class JitsiRTCClient extends AVClient {
   _loginSuccess(resolve) {
     // Set up room handle
     this._jitsiConference = this._jitsiConnection.initJitsiConference(this._room, config);
-    this.debug("conference joined:", this._jitsiConference);
+    this.debug("Conference joined:", this._jitsiConference);
 
     // Set our jitsi username to our FVTT user ID
     this._jitsiConference.setDisplayName(game.user.id);
@@ -664,7 +664,7 @@ class JitsiRTCClient extends AVClient {
   _onRemoteTrackAdded(jitsiTrack) {
     const participant = jitsiTrack.getParticipantId();
     const userId = this._idCache[participant];
-    this.debug("remote track type", jitsiTrack.getType(), "added for participant", participant, "(", userId, ")");
+    this.debug("Remote track type", jitsiTrack.getType(), "added for participant", participant, "(", userId, ")");
 
     // Call a debounced render
     this._render();
@@ -678,7 +678,7 @@ class JitsiRTCClient extends AVClient {
   _onRemoteTrackRemove(jitsiTrack) {
     const participant = jitsiTrack.getParticipantId();
     const userId = this._idCache[participant];
-    this.debug("remote track type", jitsiTrack.getType(), "removed for participant", participant, "(", userId, ")");
+    this.debug("Remote track type", jitsiTrack.getType(), "removed for participant", participant, "(", userId, ")");
 
     // Call a debounced render
     this._render();
@@ -708,19 +708,11 @@ class JitsiRTCClient extends AVClient {
     const participant = jitsiTrack.getParticipantId();
     const isMuted = jitsiTrack.isMuted();
 
-    this.debug("mute changed to", isMuted, "for", jitsiTrack.getType(), "for participant", participant);
+    this.debug("Mute changed to", isMuted, "for", jitsiTrack.getType(), "for participant", participant);
 
     if (jitsiTrack.getType() === "video") {
       this._render();
     }
-  }
-
-  /**
-   * Handles the dominant speaker is changed
-   * @param id string
-   */
-  _onDominantSpeakerChanged(id) {
-    this.debug("dominant speaker changed to", id);
   }
 
   _addExternalUserData(id) {
@@ -749,7 +741,7 @@ class JitsiRTCClient extends AVClient {
   }
 
   _onConferenceJoined(resolve) {
-    this.debug("conference joined event.");
+    this.debug("Conference joined event.");
     resolve(true);
   }
 
@@ -781,20 +773,20 @@ class JitsiRTCClient extends AVClient {
     const fvttUser = game.users.get(displayName);
     if (!fvttUser.active) {
       // Force the user to be active. If they are signing in to Jitsi, they should be online.
-      this.debug("Joining user", displayName, "is not listed as active. Setting to active.");
+      this.warn("Joining user", displayName, "is not listed as active. Setting to active.");
       fvttUser.active = true;
     }
 
     this._usernameCache[displayName] = id;
     this._participantCache[displayName] = participant;
     this._idCache[id] = displayName;
-    this.debug("user joined:", displayName);
+    this.debug("User joined:", displayName);
 
     this._render();
   }
 
   _onUserLeft(id) {
-    this.debug("user left:", this._idCache[id]);
+    this.debug("User left:", this._idCache[id]);
 
     delete this._usernameCache[this._idCache[id]];
     delete this._participantCache[this._idCache[id]];
@@ -1027,6 +1019,14 @@ class JitsiRTCClient extends AVClient {
    */
   debug(...args) {
     if (CONFIG.debug.avclient) console.log("JitsiRTC | ", ...args);
+  }
+
+  /**
+   * Display warning messages on the console
+   * @param {...*} args      Arguments to console.error
+   */
+  warn(...args) {
+    console.warn("JitsiRTC | ", ...args);
   }
 
   /**
