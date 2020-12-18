@@ -136,5 +136,9 @@ v0.4.9
 * Add GitHub workflow for automated release process
 * Update compatibility to FVTT v0.7.9
 
+v0.4.10
+* Force users to active when joining with Jitsi to make connections more reliable
+* Add warning log function and clean up logging
+
 # License
 This Foundry VTT module is licensed under a Creative Commons Attribution 4.0 International License.
