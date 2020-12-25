@@ -564,6 +564,11 @@ class JitsiRTCClient extends AVClient {
   async _addLocalTracks(localTracks) {
     const addedTracks = [];
 
+    if (!this._jitsiConference) {
+      this.warn("Attempted to add local tracks with no active Jitsi Conference; skipping");
+      return;
+    }
+
     // Add the track to the conference
     localTracks.forEach((localTrack) => {
       addedTracks.push(this._jitsiConference.addTrack(localTrack).catch((err) => {
@@ -581,12 +586,17 @@ class JitsiRTCClient extends AVClient {
    */
   async _closeLocalTracks() {
     const removedTracks = [];
-    if (this._jitsiConference) {
-      this._jitsiConference.getLocalTracks().forEach((localTrack) => {
-        removedTracks.push(localTrack.dispose());
-      });
+
+    if (!this._jitsiConference) {
+      this.warn("Attempted to close local tracks with no active Jitsi Conference; skipping");
+      return;
     }
-    return Promise.all(removedTracks);
+
+    this._jitsiConference.getLocalTracks().forEach((localTrack) => {
+      removedTracks.push(localTrack.dispose());
+    });
+
+    await Promise.all(removedTracks);
   }
 
   /**
