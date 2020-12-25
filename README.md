@@ -140,5 +140,9 @@ v0.4.10
 * Force users to active when joining with Jitsi to make connections more reliable
 * Add warning log function and clean up logging
 
+v0.4.11
+* Fix a potential crash when the conference hasn't been loaded properly
+* Set the sending video constraint resolution for Jitsi servers that may not work when this isn't set
+
 # License
 This Foundry VTT module is licensed under a Creative Commons Attribution 4.0 International License.
