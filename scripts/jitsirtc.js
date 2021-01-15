@@ -501,53 +501,40 @@ class JitsiRTCClient extends AVClient {
   async _initializeLocal({ audioSrc, videoSrc } = {}) {
     await this._closeLocalTracks();
 
-    let videoDevice = videoSrc;
-    let audioDevice = audioSrc;
-
-    // Handle missing video device
-    if (Object.entries(await this.getVideoSources()).length === 0 || (videoDevice !== "default" && !(videoDevice in await this.getVideoSources()))) {
-      videoDevice = null;
-    }
-
-    // handle missing audio device
-    if (Object.entries(await this.getAudioSources()).length === 0 || (audioDevice !== "default" && !(audioDevice in await this.getAudioSources()))) {
-      audioDevice = null;
-    }
+    // Check for requested/allowed audio/video
+    const audioRequested = audioSrc && this.master.canUserBroadcastAudio(game.user.id);
+    const videoRequested = videoSrc && this.master.canUserBroadcastVideo(game.user.id);
 
     const devlist = [];
     let localTracks = [];
-    if (audioDevice) devlist.push("audio");
-    if (videoDevice) devlist.push("video");
-    this.debug("Device list for createLocalTracks:", devlist);
+    if (audioRequested) devlist.push("audio");
+    if (videoRequested) devlist.push("video");
 
     // Create our tracks
     if (devlist.length > 0) {
-      try {
-        localTracks = await JitsiMeetJS.createLocalTracks({
-          devices: devlist,
-          resolution: 240,
-          cameraDeviceId: videoDevice,
-          micDeviceId: audioDevice,
-          constraints: {
-            video: {
-              aspectRatio: 4 / 3,
-              height: {
-                ideal: 240,
-                max: 480,
-                min: 120,
-              },
-              width: {
-                ideal: 320,
-                max: 640,
-                min: 160,
-              },
+      localTracks = await this._createLocalTracks(devlist, audioSrc, videoSrc);
 
-            },
-          },
-        });
-      } catch (err) {
-        this.onError("createLocalTracks error:", err);
-        return false;
+      // In case of failure attempting to capture A/V, try to capture audio only or video only
+      if (!localTracks) {
+        let capturedOnly = "Audio";
+        if (audioRequested) {
+          // Try without video first
+          localTracks = await this._createLocalTracks(["audio"], audioSrc, videoSrc);
+        }
+        if (!localTracks && videoRequested) {
+          // If it fails, try video only
+          capturedOnly = "Video";
+          localTracks = await this._createLocalTracks(["video"], audioSrc, videoSrc);
+        }
+        if (localTracks) {
+          // We successfully started audio or video
+          this.warn(game.i18n.localize(`WEBRTC.CaptureWarning${capturedOnly}`));
+          ui.notifications.warn(game.i18n.localize(`WEBRTC.CaptureWarning${capturedOnly}`));
+        } else {
+          // Nothing worked, return false
+          ui.notifications.warn(game.i18n.localize("WEBRTC.CaptureErrorAudioVideo"));
+          return false;
+        }
       }
     }
 
@@ -555,6 +542,42 @@ class JitsiRTCClient extends AVClient {
     await this._addLocalTracks(localTracks);
 
     return true;
+  }
+
+  async _createLocalTracks(devlist, audioSrc, videoSrc) {
+    this.debug("Device list for createLocalTracks:", devlist);
+
+    // Try to create the requested tracks
+    let localTracks = [];
+    try {
+      localTracks = await JitsiMeetJS.createLocalTracks({
+        devices: devlist,
+        resolution: 240,
+        cameraDeviceId: videoSrc,
+        micDeviceId: audioSrc,
+        constraints: {
+          video: {
+            aspectRatio: 4 / 3,
+            height: {
+              ideal: 240,
+              max: 480,
+              min: 120,
+            },
+            width: {
+              ideal: 320,
+              max: 640,
+              min: 160,
+            },
+          },
+        },
+      });
+    } catch (err) {
+      this.warn("createLocalTracks error:", err);
+      return null;
+    }
+
+    // Return the created tracks
+    return localTracks;
   }
 
   /**
