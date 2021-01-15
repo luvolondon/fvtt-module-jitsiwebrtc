@@ -599,13 +599,34 @@ class JitsiRTCClient extends AVClient {
 
     // Add the track to the conference
     localTracks.forEach((localTrack) => {
-      addedTracks.push(this._jitsiConference.addTrack(localTrack).catch((err) => {
-        this.onError("addTrack error:", err);
-      }));
+      let trackAllowed = false;
+      const trackType = localTrack.getType();
+
+      // Determine if the user is allowed to add this track type
+      if (trackType === "audio" && this.master.canUserBroadcastAudio(game.user.id)) {
+        trackAllowed = true;
+      } else if (trackType === "video" && this.master.canUserBroadcastVideo(game.user.id)) {
+        trackAllowed = true;
+      }
+
+      // Add track if allowed
+      if (trackAllowed) {
+        addedTracks.push(this._jitsiConference.addTrack(localTrack).catch((err) => {
+          this.onError("addTrack error:", err);
+        }));
+      } else {
+        this.warn("Attempted to add disallowed track of type:", trackType);
+      }
     });
 
     // Wait for all tracks to be added
     await Promise.all(addedTracks);
+
+    // Check that mute/hidden/broadcast are toggled properly
+    const voiceModeAlways = this.settings.get("client", "voice.mode") === "always";
+    this.toggleAudio(voiceModeAlways && this.master.canUserShareAudio(game.user.id));
+    this.toggleVideo(this.master.canUserShareVideo(game.user.id));
+    this.master.broadcast(voiceModeAlways);
   }
 
   /**
@@ -1076,6 +1097,20 @@ class JitsiRTCClient extends AVClient {
       whisper: [game.user.id],
     };
     ChatMessage.create(chatData, {});
+  }
+
+  _fvttAudioEnabled() {
+    if ([AVSettings.AV_MODES.AUDIO_VIDEO, AVSettings.AV_MODES.AUDIO].includes(this.master.mode)) {
+      return true;
+    }
+    return false;
+  }
+
+  _fvttVideoEnabled() {
+    if ([AVSettings.AV_MODES.AUDIO_VIDEO, AVSettings.AV_MODES.VIDEO].includes(this.master.mode)) {
+      return true;
+    }
+    return false;
   }
 
   /**
