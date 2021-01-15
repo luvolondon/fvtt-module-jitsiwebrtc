@@ -519,12 +519,12 @@ class JitsiRTCClient extends AVClient {
         let capturedOnly = "Audio";
         if (audioRequested) {
           // Try without video first
-          localTracks = await this._createLocalTracks(["audio"], audioSrc, videoSrc);
+          localTracks = await this._createLocalTracks(["audio"], audioSrc, null);
         }
         if (!localTracks && videoRequested) {
           // If it fails, try video only
           capturedOnly = "Video";
-          localTracks = await this._createLocalTracks(["video"], audioSrc, videoSrc);
+          localTracks = await this._createLocalTracks(["video"], null, videoSrc);
         }
         if (localTracks) {
           // We successfully started audio or video
@@ -532,6 +532,7 @@ class JitsiRTCClient extends AVClient {
           ui.notifications.warn(game.i18n.localize(`WEBRTC.CaptureWarning${capturedOnly}`));
         } else {
           // Nothing worked, return false
+          this.warn(game.i18n.localize("WEBRTC.CaptureErrorAudioVideo"));
           ui.notifications.warn(game.i18n.localize("WEBRTC.CaptureErrorAudioVideo"));
           return false;
         }
