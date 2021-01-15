@@ -147,5 +147,11 @@ v0.4.11
 v0.4.12
 * Improve logic around creating local a/v tracks to better handle when audio or video may not be available or enabled
 
+v0.4.13
+* Minor changes to a/v track sharing
+* Add non-user-facing method for sharing screen/desktop into the meeting
+
+    This is mostly for testing and there are no plans to add a UI for it, however it can be used in a macro by running `game.webrtc.client._shareDesktopTracks();` and normal a/v tracks can be resumed by running `game.webrtc.client._initializeLocal(game.webrtc.client.settings.client);`
+
 # License
 This Foundry VTT module is licensed under a Creative Commons Attribution 4.0 International License.
