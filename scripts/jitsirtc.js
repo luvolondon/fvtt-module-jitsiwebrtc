@@ -556,6 +556,10 @@ class JitsiRTCClient extends AVClient {
         resolution: 240,
         cameraDeviceId: videoSrc,
         micDeviceId: audioSrc,
+        desktopSharingFrameRate: {
+          min: 5,
+          max: 30,
+        },
         constraints: {
           video: {
             aspectRatio: 4 / 3,
@@ -608,7 +612,7 @@ class JitsiRTCClient extends AVClient {
    * Remove local tracks from the conference
    * @private
    */
-  async _closeLocalTracks() {
+  async _closeLocalTracks(trackType = null) {
     const removedTracks = [];
 
     if (!this._jitsiConference) {
@@ -617,10 +621,34 @@ class JitsiRTCClient extends AVClient {
     }
 
     this._jitsiConference.getLocalTracks().forEach((localTrack) => {
-      removedTracks.push(localTrack.dispose());
+      if (!trackType || localTrack.getType() === trackType) {
+        removedTracks.push(localTrack.dispose());
+      }
     });
 
     await Promise.all(removedTracks);
+  }
+
+  async _shareDesktopTracks() {
+    const desktopTracks = await game.webrtc.client._createLocalTracks(["desktop"], null, null);
+
+    if (!desktopTracks) {
+      this.warn("Could not create desktop tracks");
+      return false;
+    }
+
+    if (desktopTracks.length === 1) {
+      // Only video shared, close existing track
+      await this._closeLocalTracks("video");
+    } else {
+      // Video and Audio shared, close all tracks
+      await this._closeLocalTracks();
+    }
+
+    // Add the desktop tracks to the stream
+    await this._addLocalTracks(desktopTracks);
+
+    return true;
   }
 
   /**
