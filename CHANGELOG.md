@@ -1,3 +1,7 @@
+# v0.4.14
+* Improve track add logic
+* Improve changelog
+
 # v0.4.13
 * Minor changes to a/v track sharing
 * Add non-user-facing method for sharing screen/desktop into the meeting
