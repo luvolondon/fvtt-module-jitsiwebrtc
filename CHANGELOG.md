@@ -1,3 +1,6 @@
+# v0.4.15
+* Don't attempt to set the audio output device when that option isn't available (such as with the FireFox browser)
+
 # v0.4.14
 * Improve track add logic
 * Improve changelog
