@@ -377,8 +377,12 @@ class JitsiRTCClient extends AVClient {
 
     // Add the audio for the user
     if (userAudioTrack && audioElement) {
+      if (JitsiMeetJS.mediaDevices.isDeviceChangeAvailable("output")) {
       // Set audio output
-      userAudioTrack.setAudioOutput(this.settings.client.audioSink);
+        userAudioTrack.setAudioOutput(this.settings.client.audioSink);
+      } else if (this.settings.client.audioSink !== "default") {
+        this.warn("Setting the audio output device is not available");
+      }
 
       // Attach the track
       userAudioTrack.attach(audioElement);
