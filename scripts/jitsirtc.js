@@ -10,6 +10,7 @@ class JitsiRTCClient extends AVClient {
 
     this._jitsiConnection = null;
     this._jitsiConference = null;
+    this._active = false;
     this._server = null;
     this._room = null;
     this._usernameCache = {};
@@ -70,7 +71,13 @@ class JitsiRTCClient extends AVClient {
     }
 
     const jitsiInit = JitsiMeetJS.init(config);
-    JitsiMeetJS.setLogLevel(JitsiMeetJS.logLevels.ERROR);
+
+    // Set Jitsi logging level
+    if (CONFIG.debug.avclient) {
+      JitsiMeetJS.setLogLevel(JitsiMeetJS.logLevels.DEBUG);
+    } else {
+      JitsiMeetJS.setLogLevel(JitsiMeetJS.logLevels.ERROR);
+    }
     return jitsiInit;
   }
 
@@ -95,6 +102,9 @@ class JitsiRTCClient extends AVClient {
 
     await this.disconnect(); // Disconnect first, just in case
 
+    // Set the connection as active
+    this._active = true;
+
     // TODO check for success with these before returning?
     await this._connectServer(this.settings.get("world", "server"));
     await this._initializeLocal(this.settings.client);
@@ -115,6 +125,9 @@ class JitsiRTCClient extends AVClient {
   async disconnect() {
     this.debug("JitsiRTCClient disconnect");
     let disconnected = false;
+
+    // Set the connection as inactive
+    this._active = false;
 
     // Dispose of tracks
     await this._closeLocalTracks();
@@ -641,7 +654,7 @@ class JitsiRTCClient extends AVClient {
     const removedTracks = [];
 
     if (!this._jitsiConference) {
-      this.warn("Attempted to close local tracks with no active Jitsi Conference; skipping");
+      this.debug("Attempted to close local tracks with no active Jitsi Conference; skipping");
       return;
     }
 
@@ -701,6 +714,18 @@ class JitsiRTCClient extends AVClient {
       this._onConferenceError.bind(this, resolve),
     );
     this._jitsiConference.on(
+      JitsiMeetJS.events.conference.CONNECTION_INTERRUPTED,
+      this._onConnectionInterrupted.bind(this),
+    );
+    this._jitsiConference.on(
+      JitsiMeetJS.events.conference.PARTICIPANT_CONN_STATUS_CHANGED,
+      this._onParticipantConnStatusChanged.bind(this),
+    );
+    this._jitsiConference.on(
+      JitsiMeetJS.events.conference.SUSPEND_DETECTED,
+      this._onSuspendDetected.bind(this),
+    );
+    this._jitsiConference.on(
       JitsiMeetJS.events.conference.TRACK_ADDED,
       this._onRemoteTrackAdded.bind(this),
     );
@@ -743,8 +768,41 @@ class JitsiRTCClient extends AVClient {
    * @private
    */
   _onDisconnect(...args) {
-    this.debug("Disconnected", args);
-    this.master.connect();
+    // If we should be active, reconnect
+    if (this._active) {
+      this.warn("Connection disconnected; reconnecting", args);
+      this.master.connect();
+    }
+  }
+
+  /**
+   * Called when the connection to the ICE server is interrupted
+   * @private
+   */
+  _onConnectionInterrupted() {
+    // If we should be active, reconnect
+    if (this._active) {
+      this.warn("Connection interrupted; reconnecting");
+      this.master.connect();
+    }
+  }
+
+
+  /**
+   * Handles participant status changing
+   * @param endpointId endpoint ID (participant ID)
+   * @param newStatus the new participant status
+   */
+  _onParticipantConnStatusChanged(endpointId, newStatus) {
+    const userId = this._idCache[endpointId];
+    this.warn("Status changed for participant", endpointId, "(", userId, "):", newStatus);
+  }
+
+  /**
+   * Handles notification of suspend detected
+   */
+  _onSuspendDetected() {
+    this.warn("Suspend detected");
   }
 
   /**
