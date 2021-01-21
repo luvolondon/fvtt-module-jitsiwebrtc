@@ -1,3 +1,6 @@
+# v0.4.16
+* Add some additional logging around connection states to attempt to track down camera freezing issues
+
 # v0.4.15
 * Don't attempt to set the audio output device when that option isn't available (such as with the FireFox browser)
 
