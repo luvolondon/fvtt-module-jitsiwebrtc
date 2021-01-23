@@ -580,16 +580,6 @@ class JitsiRTCClient extends AVClient {
         constraints: {
           video: {
             aspectRatio: 4 / 3,
-            height: {
-              ideal: 240,
-              max: 480,
-              min: 120,
-            },
-            width: {
-              ideal: 320,
-              max: 640,
-              min: 160,
-            },
           },
         },
       });
@@ -701,8 +691,9 @@ class JitsiRTCClient extends AVClient {
     // Set our jitsi username to our FVTT user ID
     this._jitsiConference.setDisplayName(game.user.id);
 
-    // Set the preferred resolution of video to send
+    // Set the preferred resolution of video to send and recieve
     this._jitsiConference.setSenderVideoConstraint(240);
+    this._jitsiConference.setReceiverVideoConstraint(240);
 
     // Set up jitsi event handles
     this._jitsiConference.on(
@@ -928,6 +919,10 @@ class JitsiRTCClient extends AVClient {
     this._usernameCache[displayName] = id;
     this._participantCache[displayName] = participant;
     this._idCache[id] = displayName;
+
+    // Select all participants so their video stays active
+    this._jitsiConference.selectParticipants(Object.keys(game.webrtc.client._idCache));
+
     this.debug("User joined:", displayName);
 
     this._render();
@@ -1118,9 +1113,6 @@ class JitsiRTCClient extends AVClient {
     config.enableP2P = false;
     config.p2p.enabled = false;
 
-    // Disable simulcast for performance
-    config.disableSimulcast = true;
-
     // Disable audio detections for performance
     config.enableNoAudioDetection = false;
     config.enableNoisyMicDetection = false;
@@ -1130,8 +1122,6 @@ class JitsiRTCClient extends AVClient {
     config.audioLevelsInterval = 500;
 
     // Configure settings for consistant video
-    config.enableLayerSuspension = false;
-    config.disableSuspendVideo = true;
     config.channelLastN = -1;
     config.adaptiveLastN = false;
     delete config.lastNLimits;
