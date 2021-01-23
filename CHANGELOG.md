@@ -1,3 +1,6 @@
+# v0.4.17
+* Update simulcast and resolution settings for consistent video
+
 # v0.4.16
 * Add some additional logging around connection states to attempt to track down camera freezing issues
 
