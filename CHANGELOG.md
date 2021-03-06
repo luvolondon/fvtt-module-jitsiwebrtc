@@ -1,3 +1,6 @@
+# v0.4.19
+* Fix deletion of temorary external users
+
 # v0.4.18
 * Fix external users on FVTT v0.8.0
 * Update compatibility to FVTT v0.8.0
