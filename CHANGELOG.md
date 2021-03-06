@@ -1,3 +1,7 @@
+# v0.4.18
+* Fix external users on FVTT v0.8.0
+* Update compatibility to FVTT v0.8.0
+
 # v0.4.17
 * Update simulcast and resolution settings for consistent video
 
