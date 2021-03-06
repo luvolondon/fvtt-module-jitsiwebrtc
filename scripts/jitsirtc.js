@@ -857,9 +857,12 @@ class JitsiRTCClient extends AVClient {
   _addExternalUserData(id) {
     this.debug("Adding external Jitsi user:", id);
 
+    // Create a new Jitsi ID for the user
+    const externalUserId = randomID(16);
+
     // Create user data for the external user
     const data = {
-      _id: id,
+      _id: externalUserId,
       active: true,
       password: "",
       role: CONST.USER_ROLES.NONE,
@@ -877,6 +880,8 @@ class JitsiRTCClient extends AVClient {
     // Add the external user as a tempoary user entity
     const externalUser = new User(data);
     game.users.insert(externalUser);
+
+    return externalUserId;
   }
 
   _onConferenceJoined(resolve) {
@@ -897,15 +902,14 @@ class JitsiRTCClient extends AVClient {
       // Save the Jitsi display name into an external users cache
       this._externalUserCache[id] = displayName || "Jitsi User";
 
-      // Set the stored user name equal to the Jitsi ID
-      displayName = id;
-
       // Add the external user as a temporary user entity if external users are allowed
       if (game.settings.get("jitsirtc", "allowExternalUsers")) {
-        this._addExternalUserData(id);
+        // Set the stored user name equal to the ID created when adding the user
+        displayName = this._addExternalUserData(id);
       } else {
-        // Kick the user
+        // Kick the user and stop processing
         this._jitsiConference.kickParticipant(id);
+        return;
       }
     }
 
