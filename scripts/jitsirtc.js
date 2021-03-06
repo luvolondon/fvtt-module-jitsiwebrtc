@@ -17,6 +17,7 @@ class JitsiRTCClient extends AVClient {
     this._participantCache = {};
     this._idCache = {};
     this._externalUserCache = {};
+    this._externalUserIdCache = {};
     this._loginSuccessHandler = null;
     this._loginFailureHandler = null;
     this._onDisconnectHandler = null;
@@ -859,6 +860,7 @@ class JitsiRTCClient extends AVClient {
 
     // Create a new Jitsi ID for the user
     const externalUserId = randomID(16);
+    this._externalUserIdCache[id] = externalUserId;
 
     // Create user data for the external user
     const data = {
@@ -941,8 +943,9 @@ class JitsiRTCClient extends AVClient {
 
     // Remove the temporary user entity if they are an external Jitsi user
     if (this._externalUserCache[id]) {
+      game.users.delete(this._externalUserIdCache[id]);
+      delete this._externalUserIdCache[id];
       delete this._externalUserCache[id];
-      game.users.delete(id);
     }
 
     this._render();
