@@ -16,7 +16,7 @@
 * Add non-user-facing method for sharing screen/desktop into the meeting
 
     This is mostly for testing and there are no plans to add a UI for it, however it can be used in a macro by running `game.webrtc.client._shareDesktopTracks();` and normal a/v tracks can be resumed by running `game.webrtc.client._initializeLocal(game.webrtc.client.settings.client);`
-    
+
 # v0.4.12
 * Improve logic around creating local a/v tracks to better handle when audio or video may not be available or enabled
 
@@ -103,7 +103,7 @@ Major refactor of the code to better align with FoundryVTT expectations. This sh
 * Allow the audio output device to be changed.
 * Switch back to the non-beta Jitsi Meet server by default. The beta server is not as well maintained. If you would like to continue using the beta server, it can be configured as a custom server.
 
-# v0.2.28 
+# v0.2.28
 * Another great addition to the module be [@bekriebel](https://github.com/bekriebel), now users that directly connect to the Jitsi server are added to the game as temporary A/V users. Very handy for players without A/V on the desktop who need to usse their mobile phone for A/V.
 
 # v0.2.27
@@ -123,7 +123,7 @@ Major refactor of the code to better align with FoundryVTT expectations. This sh
 # v0.2.10
 * Included changes from @bekit to improve resolution selection
 
-# v0.2.9 
+# v0.2.9
 * Updated the included Jitsi Meet API Lib
 
 # v0.2.1 - v.0.2.6
@@ -136,4 +136,4 @@ Major refactor of the code to better align with FoundryVTT expectations. This sh
 * Bugs with device detection fixed.
 
 # v0.1
-* Initial release to test the integration with the FVTT API and call handling. 
+* Initial release to test the integration with the FVTT API and call handling.
