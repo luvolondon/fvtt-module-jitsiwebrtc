@@ -4,13 +4,24 @@ Replacement for the easyrtc p2p client to use a Jitsi relay server for A/V. It h
 First tests with 4-5 players resulted in ~700Kbit/s upload and ~ 1Mbit/s download rate for each player.
 
 ## Installation
-You can install this module by using the following manifest URL : https://raw.githubusercontent.com/luvolondon/fvtt-module-jitsiwebrtc/master/module.json
+You can install this module by using the following manifest URL : https://raw.githubusercontent.com/luvolondon/fvtt-module-jitsiwebrtc/main/module.json
 
 ## How to use
 To use this client you have to enable A/V in the Game settings. The module will replace the easyrtc client of vanilla FVTT.
 You can either connect via the Jitsi server by leaving the Signalling Server on "Foundry VTT". Or switch to a custom, self-hosted Jitsi server. A great documentation by @solfolango77 for installing your own server can be found here: https://www.vttassets.com/articles/installing-a-self-hosted-jitsi-server-to-use-with-foundry-vtt
 
 You can allow standalone Jitsi users to join your conference by enabling the module setting `Allow standalone Jitsi users`. When enabled, users can see the Jitsi meeting URL under the read-only module setting `Standalone Jitsi URL`.
+
+### **Breakout Rooms**
+A GM can now split the party!
+
+To start a breakout room, right-click on the player you would like to break out in the player list and select `Start A/V breakout`. You will join a different A/V session with that user. You can now click on other users and pull them into the breakout room, or start yet another breakout room with another user.
+
+![start breakout example](https://raw.githubusercontent.com/luvolondon/fvtt-module-jitsiwebrtc/main/images/example_start-breakout.png)
+
+Though the GM will always join the breakout room on creation, they can leave the breakout room themself by right-clicking on their own username and selecting `Leave A/V Breakout`. Users can also leave a breakout at any time by right-clicking on their own name, and the GM can end all breakout rooms by selecting `End all A/V breakouts`.
+
+![start breakout example](https://raw.githubusercontent.com/luvolondon/fvtt-module-jitsiwebrtc/main/images/example_end-breakout.png)
 
 ## Debugging
 By default, debug logs are disabled. If additional logs are needed for troubleshooting please run the following in the console: `game.settings.set('jitsirtc', 'debug', true);`
@@ -26,99 +37,7 @@ users can now join the A/V part by directly connecting to the Jitsi server. Thes
 The video stream is configured for a resolution of 240 pixels height. This could later be part of GUI configuration settings.
 
 ## Changelog
-
-v0.1
-Initial release to test the integration with the FVTT API and call handling. 
-
-v0.1.1
-Bugs with device detection fixed. 
-
-v0.2
-Several fixes for working audio. Chrome works great, Firefox has issues when players reconnect etc.
-
-v0.2.1 - v.0.2.6 Several fixes for acting dynamically on incoming A/V tracks, now with Audio-only, Video-only
-
-v0.2.9 
-Updated the included Jitsi Meet API Lib
-
-v0.2.10
-Included changes from @bekit to improve resolution selection
-
-v0.2.11
-Cleanup of variables for book-keeping of local and remote tracks. Now user-blocking of audio and video is possible. More robust against reloads/changes coming from the clients.
-
-v0.2.17
-Fix by [@bekriebel](https://github.com/bekriebel) to detect failed local streams. thx!
-see https://github.com/luvolondon/fvtt-module-jitsiwebrtc/pull/10
-
-v0.2.22
-Multiple fixes by [@bekriebel](https://github.com/bekriebel), thx!
-see https://github.com/luvolondon/fvtt-module-jitsiwebrtc/pull/15
-
-v0.2.27
-Updated compatibleCoreVersion to 0.6.4, copied files from linting-cleanup branch created by [@bekriebel](https://github.com/bekriebel) (thx!)
-
-v0.2.28 
-Another great addition to the module be [@bekriebel](https://github.com/bekriebel), now users that directly connect to the Jitsi server are added to the game as temporary A/V users. Very handy for players without A/V on the desktop who need to usse their mobile phone for A/V.
-
-v0.3.0
-Major refactor of the code to better align with FoundryVTT expectations. This should hopefully improve stability and debugging of the module. With this version, @bekriebel (bekit on Discord) has taken over as the primary module owner. Thank you to [@Luvolondon](https://github.com/luvolondon) for the original module work and future efforts with maintaining it!
-* Fix game settings registration so module settings appear properly under the module name. *NOTE*: Because the settings namespace changed, any previously configured settings will be reset with this version.
-* Only use custom URLs when the `Use custom Jitsi URLs` option is enabled. The custom URL settings will be visible after enabling this feature.
-* Update lib-jitsi-meet to the latest released version.
-* Don't force debugging to always be on. See the Debugging section above on how to enable debug logs.
-* Major refactor of code to better align with FoundryVTT expectations.
-* Kick non-FVTT users out of the meeting if the `Allow standalone Jitsi users` is not enabled.
-* Allow the audio output device to be changed.
-* Switch back to the non-beta Jitsi Meet server by default. The beta server is not as well maintained. If you would like to continue using the beta server, it can be configured as a custom server.
-
-v0.3.1
-Switch back to the `beta.meet.jit.si` server as the default. It seems some people have issues connecting to the production server. [Jitsi Comunity thread](https://community.jitsi.org/t/connection-failed-using-lib-jitsi-meet/20774) on the issue.
-
-v0.3.2
-If no meeting room name is set, create a random name. Not having a name set was causing the module to not work on a freshly created world that never had the room name generated.
-
-v0.3.3
-* Fix an issue where multiple users connecting to a load-balanced Jitsi instance (like the default Jitsi Meet servers) may get put on different instances of the conference and not see each other.
-* When setting custom URLs, also populate with default server information if no custom server is entered.
-
-v0.3.4
-* Use Jitsi's API for attaching local video to the video window. This should fix the freezing of local video windows.
-
-v0.4.0
-* Update to support FVTT 0.7.2 and above
-* Update lib-jitsi-meet to latest library version
-* This is a major refactor of the code base and may still contain bugs. Please submit issues that are found.
-
-v0.4.1
-* Update lib-jitsi-meet to latest version from beta.meet.jit.si. This will hopefully resolve some of the connection issues.
-
-v0.4.2
-* Dynamically jitsi library and config from server. This will hopefully make connections more reliable.
-* Remove support for FVTT versions lower than v0.7.2
-
-v0.4.3
-* Properly handle the URL between custom and default ("FVTT") server selection
-* Properly handle missing audio and video devices
-* Set voice-activation mode to act the same as always-on. Since Jitsi handles voice activation natively, there is no need to handle this differently.
-* Update the values read from config.js with better defaults
-* Reduce the number of render calls to hopefully make UI updates work better
-
-v0.4.4
-* Pass config object with initializing to enable additional performance settings
-* Only block the toggling of audio off of mute when PTT is set
-* Blank out the video track when the remote user is hidden
-* Remove the voice activation option as this is natively handled by Jitsi
-* Port the "Use full Jitsi Meet client" from WebRTCTweaks
-
-v0.4.5
-* Call renders more often, but with a debounce delay
-
-v0.4.6
-* Update compatibility to FVTT v0.7.7
-* Fix custom server URL settings
-* Add localization options (English only for now)
-* Show that the default server is using `beta.meet.jit.si`
+See [CHANGELOG](/CHANGELOG.md)
 
 # License
 This Foundry VTT module is licensed under a Creative Commons Attribution 4.0 International License.
