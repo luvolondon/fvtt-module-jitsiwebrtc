@@ -20,6 +20,8 @@
     "JITSIRTC.debug": "Enable debug logging",
     "JITSIRTC.debugHint": "Enables CONFIG.debug.av and CONFIG.debug.avclient for extra logging",
     "JITSIRTC.joinMessage": "Join Jitsi Meeting",
+    "JITSIRTC.joinButton": "Join",
+    "JITSIRTC.ignoreButton": "Ignore",
 
     "WEBRTC.FVTTSignalingServer": "Public Jitsi Meet Beta (beta.meet.jit.si)"
 }

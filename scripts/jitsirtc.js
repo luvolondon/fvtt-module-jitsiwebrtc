@@ -1148,14 +1148,24 @@ class JitsiRTCClient extends AVClient {
 
     const url = `https://${this._server}/${roomId}#userInfo.displayName=%22${game.user.id}%22`;
 
-    const chatData = {
-      content: `<a href="${url}">${game.i18n.localize("JITSIRTC.joinMessage")}</a>`,
-      speaker: {
-        scene: null, actor: null, token: null, alias: "JitsiRTC",
+    const joinDialog = new Dialog({
+      title: game.i18n.localize("JITSIRTC.joinMessage"),
+      // content: `<p>${url}</p>`,
+      buttons: {
+        join: {
+          icon: '<i class="fas fa-check"></i>',
+          label: game.i18n.localize("JITSIRTC.joinButton"),
+          callback: () => window.open(url),
+        },
+        ignore: {
+          icon: '<i class="fas fa-times"></i>',
+          label: game.i18n.localize("JITSIRTC.ignoreButton"),
+          callback: () => (this.debug("Ignoring Jitsi Meet join request")),
+        },
       },
-      whisper: [game.user.id],
-    };
-    ChatMessage.create(chatData, {});
+      default: "join",
+    });
+    joinDialog.render(true);
   }
 
   _fvttAudioEnabled() {
