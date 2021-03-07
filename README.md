@@ -12,6 +12,17 @@ You can either connect via the Jitsi server by leaving the Signalling Server on 
 
 You can allow standalone Jitsi users to join your conference by enabling the module setting `Allow standalone Jitsi users`. When enabled, users can see the Jitsi meeting URL under the read-only module setting `Standalone Jitsi URL`.
 
+### **Breakout Rooms**
+A GM can now split the party!
+
+To start a breakout room, right-click on the player you would like to break out in the player list and select `Start A/V breakout`. You will join a different A/V session with that user. You can now click on other users and pull them into the breakout room, or start yet another breakout room with another user.
+
+![start breakout example](https://raw.githubusercontent.com/luvolondon/fvtt-module-jitsiwebrtc/main/images/example_start-breakout.png)
+
+Though the GM will always join the breakout room on creation, they can leave the breakout room themself by right-clicking on their own username and selecting `Leave A/V Breakout`. Users can also leave a breakout at any time by right-clicking on their own name, and the GM can end all breakout rooms by selecting `End all A/V breakouts`.
+
+![start breakout example](https://raw.githubusercontent.com/luvolondon/fvtt-module-jitsiwebrtc/main/images/example_end-breakout.png)
+
 ## Debugging
 By default, debug logs are disabled. If additional logs are needed for troubleshooting please run the following in the console: `game.settings.set('jitsirtc', 'debug', true);`
 
