@@ -1146,7 +1146,7 @@ class JitsiRTCClient extends AVClient {
   _sendJoinMessage() {
     const roomId = this.settings.get("world", "server.room");
 
-    const url = `https://${this._server}/${roomId}#userInfo.displayName=%22${game.user.id}%22`;
+    const url = `https://${this._server}/${roomId}#userInfo.displayName=%22${game.user.id}%22&config.prejoinPageEnabled=false`;
 
     const joinDialog = new Dialog({
       title: game.i18n.localize("JITSIRTC.joinMessage"),
