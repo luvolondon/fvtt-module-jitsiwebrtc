@@ -1,3 +1,8 @@
+# v0.5.0
+* Split the party! You can now create breakout rooms for separate chats between users. See [Breakout Rooms](/CHANGELOG.md#breakout-rooms) in the README for more details
+* Switch to a Dialog for the Use Full Jitsi Meet join message to better support v0.8.0
+* Disable the Jitsi prejoin page when joining with the Full Jitsi Meet option
+
 # v0.4.19
 * Fix deletion of temorary external users
 
