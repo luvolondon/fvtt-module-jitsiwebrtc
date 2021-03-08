@@ -1,3 +1,6 @@
+# v0.5.1
+* Update Spanish translation (thanks to José E. Lozano!)
+
 # v0.5.0
 * Split the party! You can now create breakout rooms for separate chats between users. See [Breakout Rooms](/README.md#breakout-rooms) in the README for more details
 * Switch to a Dialog for the Use Full Jitsi Meet join message to better support v0.8.0
