@@ -1317,6 +1317,21 @@ Hooks.on("init", () => {
       }
     },
   });
+  game.settings.register("jitsirtc", "resetRoom", {
+    name: "JITSIRTC.resetRoom",
+    hint: "JITSIRTC.resetRoomHint",
+    scope: "world",
+    config: true,
+    default: false,
+    type: Boolean,
+    onChange: (value) => {
+      if (value) {
+        game.webrtc.client.warn("Resetting Jitsi meeting room ID");
+        game.settings.set("jitsirtc", "resetRoom", false);
+        game.webrtc.client.settings.set("world", "server.room", randomID(32));
+      }
+    },
+  });
   game.settings.register("jitsirtc", "useJitsiMeet", {
     name: "JITSIRTC.useJitsiMeet",
     hint: "JITSIRTC.useJitsiMeetHint",
