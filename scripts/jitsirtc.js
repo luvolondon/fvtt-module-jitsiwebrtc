@@ -926,6 +926,7 @@ class JitsiRTCClient extends AVClient {
       // Force the user to be active. If they are signing in to Jitsi, they should be online.
       this.warn("Joining user", displayName, "is not listed as active. Setting to active.");
       fvttUser.active = true;
+      ui.players.render();
     }
 
     this._usernameCache[displayName] = id;
