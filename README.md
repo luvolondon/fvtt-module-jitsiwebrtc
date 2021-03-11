@@ -4,7 +4,7 @@ Replacement for the easyrtc p2p client to use a Jitsi relay server for A/V. It h
 First tests with 4-5 players resulted in ~700Kbit/s upload and ~ 1Mbit/s download rate for each player.
 
 ## Installation
-You can install this module by using the following manifest URL : https://raw.githubusercontent.com/luvolondon/fvtt-module-jitsiwebrtc/main/module.json
+You can install this module by using the following manifest URL: https://github.com/luvolondon/fvtt-module-jitsiwebrtc/releases/latest/download/module.json
 
 ## How to use
 To use this client you have to enable A/V in the Game settings. The module will replace the easyrtc client of vanilla FVTT.
