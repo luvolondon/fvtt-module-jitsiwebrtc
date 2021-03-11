@@ -3,7 +3,7 @@
   "title": "Jitsi WebRTC client",
   "description": "Use Jitsi to handle A/V. Connect to jitsi.org or self-hosted server.",
   "author": "Luvolondon, bekit",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "styles": [],
   "packs": [],
   "socket": true,

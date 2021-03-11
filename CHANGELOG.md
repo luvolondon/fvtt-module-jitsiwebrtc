@@ -1,3 +1,7 @@
+# v0.5.2
+* Render the player list after setting a user to active
+* Add an option under Module Settings to reset the Jitsi Room ID
+
 # v0.5.1
 * Update Spanish translation (thanks to José E. Lozano!)
 
