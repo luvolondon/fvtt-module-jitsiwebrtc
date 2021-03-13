@@ -3,6 +3,8 @@
     "JITSIRTC.allowExternalUsersHint": "If a user joins the Jitsi meeting outside of FVTT, show them to players in the FVTT interface. (URL will visible to users here after enabling this option).",
     "JITSIRTC.externalUsersUrl": "Standalone Jitsi URL (read-only)",
     "JITSIRTC.externalUsersUrlHint": "The URL for standalone Jitsi users to join the conference. Cannot be changed.",
+    "JITSIRTC.resetRoom": "Reset Jitsi Meet Room ID",
+    "JITSIRTC.resetRoomHint": "Reset the meeting room ID used on your selected Jitsi server. This will also cause the Standalone Jitsi URL to change.",
     "JITSIRTC.useJitsiMeet": "Use full Jitsi Meet client",
     "JITSIRTC.useJitsiMeetHint": "Use the full Jitsi Meet web interface instead of the built-in audio/video display",
     "JITSIRTC.customUrls": "Use custom Jitsi URLs",

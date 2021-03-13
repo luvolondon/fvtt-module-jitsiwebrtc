@@ -926,6 +926,7 @@ class JitsiRTCClient extends AVClient {
       // Force the user to be active. If they are signing in to Jitsi, they should be online.
       this.warn("Joining user", displayName, "is not listed as active. Setting to active.");
       fvttUser.active = true;
+      ui.players.render();
     }
 
     this._usernameCache[displayName] = id;
@@ -1313,6 +1314,21 @@ Hooks.on("init", () => {
     onChange: (value) => {
       if (value !== game.webrtc.client.jitsiURL) {
         game.settings.set("jitsirtc", "externalUsersUrl", game.webrtc.client.jitsiURL);
+      }
+    },
+  });
+  game.settings.register("jitsirtc", "resetRoom", {
+    name: "JITSIRTC.resetRoom",
+    hint: "JITSIRTC.resetRoomHint",
+    scope: "world",
+    config: true,
+    default: false,
+    type: Boolean,
+    onChange: (value) => {
+      if (value) {
+        game.webrtc.client.warn("Resetting Jitsi meeting room ID");
+        game.settings.set("jitsirtc", "resetRoom", false);
+        game.webrtc.client.settings.set("world", "server.room", randomID(32));
       }
     },
   });
