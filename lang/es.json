@@ -6,6 +6,8 @@
     "JITSIRTC.allowExternalUsersHint": "Todos los usuarios que se conecten a la videoconferencia de manera externa también se mostrarán en la interfaz de FVTT. La URL para conectarse se mostrará una vez se habilite esta opción",
     "JITSIRTC.externalUsersUrl": "URL externa de Jitsi (solo lectura)",
     "JITSIRTC.externalUsersUrlHint": "URL de conexión para los usuarios externos de Jitsi. No se puede cambiar",
+    "JITSIRTC.resetRoom": "Reiniciar ID de la sala Jitsi Meet",
+    "JITSIRTC.resetRoomHint": "Reinicia el ID de la sala del servidor Jitsi externo. Esto hará que la URL cambie",
     "JITSIRTC.useJitsiMeet": "Usar el cliente completo de Jitsi Meet",
     "JITSIRTC.useJitsiMeetHint": "Usa la inferfaz web completa de Jitsi Meet en lugar del A/V integrado en FVTT",
     "JITSIRTC.customUrls": "Usar URLs Jitsi personalizadas",
