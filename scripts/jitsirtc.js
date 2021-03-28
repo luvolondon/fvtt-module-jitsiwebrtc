@@ -18,7 +18,6 @@ class JitsiRTCClient extends AVClient {
     this._idCache = {};
     this._externalUserCache = {};
     this._externalUserIdCache = {};
-    this._breakoutRoomCache = {};
     this._loginSuccessHandler = null;
     this._loginFailureHandler = null;
     this._onDisconnectHandler = null;
@@ -935,7 +934,7 @@ class JitsiRTCClient extends AVClient {
 
     // Clear breakout room cache if user is joining the main conference
     if (!this._breakoutRoom) {
-      delete this._breakoutRoomCache[displayName];
+      this.settings.set("client", `users.${displayName}.jitsiBreakoutRoom`, "");
     }
 
     // Select all participants so their video stays active
@@ -951,10 +950,10 @@ class JitsiRTCClient extends AVClient {
 
     // Clear breakout room cache if user is leaving a breakout room
     if (
-      this._breakoutRoomCache[this._idCache[id]] === this._room
+      this.settings.getUser(this._idCache[id]).jitsiBreakoutRoom === this._room
       && this._room === this._breakoutRoom
     ) {
-      delete this._breakoutRoomCache[this._idCache[id]];
+      this.settings.set("client", `users.${this._idCache[id]}.jitsiBreakoutRoom`, "");
     }
 
     delete this._usernameCache[this._idCache[id]];
@@ -1219,7 +1218,7 @@ class JitsiRTCClient extends AVClient {
       return;
     }
 
-    this._breakoutRoomCache[userId] = breakoutRoom;
+    this.settings.set("client", `users.${userId}.jitsiBreakoutRoom`, breakoutRoom);
     game.socket.emit("module.jitsirtc", {
       action: "breakout",
       userId,
@@ -1233,7 +1232,7 @@ class JitsiRTCClient extends AVClient {
       return;
     }
 
-    this._breakoutRoomCache[userId] = null;
+    this.settings.set("client", `users.${userId}.jitsiBreakoutRoom`, "");
     game.socket.emit("module.jitsirtc", {
       action: "breakout",
       userId,
@@ -1256,6 +1255,10 @@ class JitsiRTCClient extends AVClient {
     if (this._breakoutRoom) {
       this._breakout(null);
     }
+  }
+
+  _isUserExternal(userId) {
+    return Object.values(this._externalUserIdCache).includes(userId);
   }
 
   /**
@@ -1432,16 +1435,24 @@ Hooks.on("ready", () => {
 });
 
 Hooks.on("getUserContextOptions", async (html, options) => {
+  // Don't add breakout options if AV is disabled
+  if (game.webrtc.settings.get("world", "mode") === AVSettings.AV_MODES.DISABLED) {
+    return;
+  }
+
+  // Add breakout options to the playerlist context menus
   options.push(
     {
       name: game.i18n.localize("JITSIRTC.startAVBreakout"),
       icon: '<i class="fa fa-comment"></i>',
       condition: (players) => {
         const { userId } = players[0].dataset;
+        const { jitsiBreakoutRoom } = game.webrtc.client.settings.getUser(userId);
         return (
           game.user.isGM
-          && !game.webrtc.client._breakoutRoomCache[userId]
+          && !jitsiBreakoutRoom
           && userId !== game.user.id
+          && !game.webrtc.client._isUserExternal(userId)
         );
       },
       callback: (players) => {
@@ -1455,16 +1466,18 @@ Hooks.on("getUserContextOptions", async (html, options) => {
       icon: '<i class="fas fa-comment-dots"></i>',
       condition: (players) => {
         const { userId } = players[0].dataset;
+        const { jitsiBreakoutRoom } = game.webrtc.client.settings.getUser(userId);
         return (
           game.user.isGM
-          && game.webrtc.client._breakoutRoomCache[userId]
-          && game.webrtc.client._breakoutRoom !== game.webrtc.client._breakoutRoomCache[userId]
+          && game.webrtc.client.settings.getUser(userId).jitsiBreakoutRoom
+          && game.webrtc.client._breakoutRoom !== jitsiBreakoutRoom
           && userId !== game.user.id
         );
       },
       callback: (players) => {
-        const breakoutRoom = game.webrtc.client._breakoutRoomCache[players[0].dataset.userId];
-        game.webrtc.client._breakout(breakoutRoom);
+        const { userId } = players[0].dataset;
+        const { jitsiBreakoutRoom } = game.webrtc.client.settings.getUser(userId);
+        game.webrtc.client._breakout(jitsiBreakoutRoom);
       },
     },
     {
@@ -1472,11 +1485,13 @@ Hooks.on("getUserContextOptions", async (html, options) => {
       icon: '<i class="fas fa-comments"></i>',
       condition: (players) => {
         const { userId } = players[0].dataset;
+        const { jitsiBreakoutRoom } = game.webrtc.client.settings.getUser(userId);
         return (
           game.user.isGM
           && game.webrtc.client._breakoutRoom
-          && game.webrtc.client._breakoutRoomCache[userId] !== game.webrtc.client._breakoutRoom
+          && jitsiBreakoutRoom !== game.webrtc.client._breakoutRoom
           && userId !== game.user.id
+          && !game.webrtc.client._isUserExternal(userId)
         );
       },
       callback: (players) => { game.webrtc.client._startBreakout(players.data("user-id"), game.webrtc.client._breakoutRoom); },
@@ -1498,9 +1513,10 @@ Hooks.on("getUserContextOptions", async (html, options) => {
       icon: '<i class="fas fa-comment-slash"></i>',
       condition: (players) => {
         const { userId } = players[0].dataset;
+        const { jitsiBreakoutRoom } = game.webrtc.client.settings.getUser(userId);
         return (
           game.user.isGM
-          && game.webrtc.client._breakoutRoomCache[userId]
+          && jitsiBreakoutRoom
           && userId !== game.user.id
         );
       },
