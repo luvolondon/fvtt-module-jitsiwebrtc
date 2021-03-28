@@ -8,10 +8,10 @@
 # v0.5.0
 * Split the party! You can now create breakout rooms for separate chats between users. See [Breakout Rooms](/README.md#breakout-rooms) in the README for more details
 * Switch to a Dialog for the Use Full Jitsi Meet join message to better support v0.8.0
-* Disable the Jitsi prejoin page when joining with the Full Jitsi Meet option
+* Disable the Jitsi pre-join page when joining with the Full Jitsi Meet option
 
 # v0.4.19
-* Fix deletion of temorary external users
+* Fix deletion of temporary external users
 
 # v0.4.18
 * Fix external users on FVTT v0.8.0
@@ -109,7 +109,7 @@
 * If no meeting room name is set, create a random name. Not having a name set was causing the module to not work on a freshly created world that never had the room name generated.
 
 # v0.3.1
-* Switch back to the `beta.meet.jit.si` server as the default. It seems some people have issues connecting to the production server. [Jitsi Comunity thread](https://community.jitsi.org/t/connection-failed-using-lib-jitsi-meet/20774) on the issue.
+* Switch back to the `beta.meet.jit.si` server as the default. It seems some people have issues connecting to the production server. [Jitsi Community thread](https://community.jitsi.org/t/connection-failed-using-lib-jitsi-meet/20774) on the issue.
 
 # v0.3.0
 Major refactor of the code to better align with FoundryVTT expectations. This should hopefully improve stability and debugging of the module. With this version, @bekriebel (bekit on Discord) has taken over as the primary module owner. Thank you to [@Luvolondon](https://github.com/luvolondon) for the original module work and future efforts with maintaining it!
@@ -123,7 +123,7 @@ Major refactor of the code to better align with FoundryVTT expectations. This sh
 * Switch back to the non-beta Jitsi Meet server by default. The beta server is not as well maintained. If you would like to continue using the beta server, it can be configured as a custom server.
 
 # v0.2.28
-* Another great addition to the module be [@bekriebel](https://github.com/bekriebel), now users that directly connect to the Jitsi server are added to the game as temporary A/V users. Very handy for players without A/V on the desktop who need to usse their mobile phone for A/V.
+* Another great addition to the module be [@bekriebel](https://github.com/bekriebel), now users that directly connect to the Jitsi server are added to the game as temporary A/V users. Very handy for players without A/V on the desktop who need to use their mobile phone for A/V.
 
 # v0.2.27
 * Updated compatibleCoreVersion to 0.6.4, copied files from linting-cleanup branch created by [@bekriebel](https://github.com/bekriebel) (thx!)
