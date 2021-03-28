@@ -1,3 +1,9 @@
+# v0.5.3
+* Update Spanish translation (thanks to José E. Lozano!)
+* Fix some changelog typos
+* Improve breakout room setting storage
+* Update compatibility to FVTT v0.8.1
+
 # v0.5.2
 * Render the player list after setting a user to active
 * Add an option under Module Settings to reset the Jitsi Room ID
