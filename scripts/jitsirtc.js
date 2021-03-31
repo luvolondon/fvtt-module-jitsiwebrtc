@@ -940,6 +940,20 @@ class JitsiRTCClient extends AVClient {
     // Select all participants so their video stays active
     this._jitsiConference.selectParticipants(Object.keys(game.webrtc.client._idCache));
 
+    /** Set all participants to on-stage so video quality is improved.
+     * We also need to set the default constraints to avoid them getting set back to jitsi defaults.
+     * Uses the new format described here:
+     * https://github.com/jitsi/jitsi-videobridge/blob/master/doc/allocation.md
+    */
+    this._jitsiConference.setReceiverConstraints({
+      lastN: -1,
+      onStageEndpoints: Object.keys(game.webrtc.client._idCache),
+      defaultConstraints: {
+        maxHeight: 240,
+        maxFrameRate: 30,
+      },
+    });
+
     this.debug("User joined:", displayName);
 
     this._render();
