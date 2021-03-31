@@ -1,4 +1,4 @@
-# Jitsiwebrtc
+# Jitsi WebRTC client
 Replacement for the easyrtc p2p client to use a Jitsi relay server for A/V. It has the main advantage of being able to run all communication via a relay server. A player only needs to send her/his A/V stream to a single receiver, where it is distributed to all other players. If you have more then 2 players, this is a bandwidth improvement. This feature is called SFU (Selective Forwarding Unit). Read more about Jitsi on https://jitsi.org/.
 
 First tests with 4-5 players resulted in ~700Kbit/s upload and ~ 1Mbit/s download rate for each player.
@@ -19,7 +19,7 @@ To start a breakout room, right-click on the player you would like to break out 
 
 ![start breakout example](https://raw.githubusercontent.com/luvolondon/fvtt-module-jitsiwebrtc/main/images/example_start-breakout.png)
 
-Though the GM will always join the breakout room on creation, they can leave the breakout room themself by right-clicking on their own username and selecting `Leave A/V Breakout`. Users can also leave a breakout at any time by right-clicking on their own name, and the GM can end all breakout rooms by selecting `End all A/V breakouts`.
+Though the GM will always join the breakout room on creation, they can leave the breakout room themselves by right-clicking on their own username and selecting `Leave A/V Breakout`. Users can also leave a breakout at any time by right-clicking on their own name, and the GM can end all breakout rooms by selecting `End all A/V breakouts`.
 
 ![start breakout example](https://raw.githubusercontent.com/luvolondon/fvtt-module-jitsiwebrtc/main/images/example_end-breakout.png)
 

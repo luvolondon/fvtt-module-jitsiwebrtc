@@ -49,7 +49,7 @@ class JitsiRTCClient extends AVClient {
     if (this.settings.get("world", "server").type === "custom") {
       this._server = this.settings.get("world", "server").url;
     } else {
-      // TODO: set up server types for beta / defult jitsi servers instead of just the "FVTT" type
+      // TODO: set up server types for beta / default jitsi servers instead of just the "FVTT" type
       this._server = JitsiRTCClient.defaultJitsiServer;
     }
 
@@ -697,7 +697,7 @@ class JitsiRTCClient extends AVClient {
     // Set our jitsi username to our FVTT user ID
     this._jitsiConference.setDisplayName(game.user.id);
 
-    // Set the preferred resolution of video to send and recieve
+    // Set the preferred resolution of video to send and receive
     this._jitsiConference.setSenderVideoConstraint(240);
     this._jitsiConference.setReceiverVideoConstraint(240);
 
@@ -884,7 +884,7 @@ class JitsiRTCClient extends AVClient {
       name: game.webrtc.client._externalUserCache[id],
     };
 
-    // Add the external user as a tempoary user entity
+    // Add the external user as a temporary user entity
     const externalUser = new User(data);
     game.users.insert(externalUser);
 
@@ -1147,7 +1147,7 @@ class JitsiRTCClient extends AVClient {
     config.disableAudioLevels = false;
     config.audioLevelsInterval = 500;
 
-    // Configure settings for consistant video
+    // Configure settings for consistent video
     config.channelLastN = -1;
     config.adaptiveLastN = false;
     delete config.lastNLimits;
