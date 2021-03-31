@@ -1,3 +1,7 @@
+# v0.5.4
+* Set new constraint values to fix framerate on beta.meet.jit.si
+* Minor spelling fixes
+
 # v0.5.3
 * Update Spanish translation (thanks to José E. Lozano!)
 * Fix some changelog typos
