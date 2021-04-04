@@ -945,14 +945,18 @@ class JitsiRTCClient extends AVClient {
      * Uses the new format described here:
      * https://github.com/jitsi/jitsi-videobridge/blob/master/doc/allocation.md
     */
-    this._jitsiConference.setReceiverConstraints({
-      lastN: -1,
-      onStageEndpoints: Object.keys(game.webrtc.client._idCache),
-      defaultConstraints: {
-        maxHeight: 240,
-        maxFrameRate: 30,
-      },
-    });
+    try {
+      this._jitsiConference.setReceiverConstraints({
+        lastN: -1,
+        onStageEndpoints: Object.keys(game.webrtc.client._idCache),
+        defaultConstraints: {
+          maxHeight: 240,
+          maxFrameRate: 30,
+        },
+      });
+    } catch (err) {
+      this.debug("setReceiverConstraints not supported by this Jitsi version; skipping");
+    }
 
     this.debug("User joined:", displayName);
 
