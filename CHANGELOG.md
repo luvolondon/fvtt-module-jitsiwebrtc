@@ -1,3 +1,6 @@
+# v0.5.5
+* Fix error on older Jitsi versions that don't have the setReceiverConstraints method
+
 # v0.5.4
 * Set new constraint values to fix framerate on beta.meet.jit.si
 * Minor spelling fixes
