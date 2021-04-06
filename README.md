@@ -8,7 +8,7 @@ You can install this module by using the following manifest URL: https://github.
 
 ## How to use
 To use this client you have to enable A/V in the Game settings. The module will replace the easyrtc client of vanilla FVTT.
-You can either connect via the Jitsi server by leaving the Signalling Server on "Foundry VTT". Or switch to a custom, self-hosted Jitsi server. A great documentation by @solfolango77 for installing your own server can be found here: https://www.vttassets.com/articles/installing-a-self-hosted-jitsi-server-to-use-with-foundry-vtt
+You can either connect via the Jitsi server by leaving the Signalling Server on "Foundry VTT". Or switch to a custom, self-hosted Jitsi server. A great documentation by @solfolango77 for installing your own server can be found here: https://vtta.io/articles/installing-a-self-hosted-jitsi-server
 
 You can allow standalone Jitsi users to join your conference by enabling the module setting `Allow standalone Jitsi users`. When enabled, users can see the Jitsi meeting URL under the read-only module setting `Standalone Jitsi URL`.
 
