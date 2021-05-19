@@ -30,6 +30,8 @@
     "JITSIRTC.leaveAVBreakout": "Leave A/V breakout",
     "JITSIRTC.removeFromAVBreakout": "Remove from A/V breakout",
     "JITSIRTC.endAllAVBreakouts": "End all A/V breakouts",
+    "JITSIRTC.hiddenUserJoined": "Hidden user {displayName} has joined the A/V conference",
+    "JITSIRTC.hiddenUserLeft": "Hidden user {displayName} has left the A/V conference",
 
     "WEBRTC.FVTTSignalingServer": "Public Jitsi Meet Beta (beta.meet.jit.si)"
 }

@@ -25,6 +25,15 @@
   "scripts": [
     "scripts/jitsirtc.js"
   ],
+  "styles": [
+    "css/jitsirtc.css"
+  ],
+  "dependencies": [
+    {
+      "name": "lib-captions",
+      "manifest": "https://github.com/bekriebel/fvtt-module-lib-captions/releases/latest/download/module.json"
+    }
+  ],
   "socket": true,
   "url": "https://github.com/luvolondon/fvtt-module-jitsiwebrtc",
   "manifest": "https://github.com/luvolondon/fvtt-module-jitsiwebrtc/releases/latest/download/module.json",

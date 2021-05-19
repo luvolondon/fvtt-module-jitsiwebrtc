@@ -704,6 +704,14 @@ class JitsiRTCClient extends AVClient {
       this._onConferenceError.bind(this, resolve),
     );
     this._jitsiConference.on(
+      JitsiMeetJS.events.conference.ENDPOINT_MESSAGE_RECEIVED,
+      this._onEndpointMessageReceived.bind(this),
+    );
+    this._jitsiConference.on(
+      JitsiMeetJS.events.conference.MESSAGE_RECEIVED,
+      this._onMessageReceived.bind(this),
+    );
+    this._jitsiConference.on(
       JitsiMeetJS.events.conference.CONNECTION_INTERRUPTED,
       this._onConnectionInterrupted.bind(this),
     );
@@ -777,6 +785,37 @@ class JitsiRTCClient extends AVClient {
     }
   }
 
+  /**
+   * Notifies that a new message from another participant is received on a data channel
+   * @param endpointId endpoint ID (participant ID)
+   * @param endpointMessage the endpoint message
+   * @private
+   */
+  _onEndpointMessageReceived(endpointId, endpointMessage) {
+    switch (endpointMessage.type) {
+      case "e2e-ping-request":
+        break;
+      case "e2e-ping-response":
+        break;
+      case "transcription-result":
+        // Handle a transcription message
+        this._handleTranscription(endpointMessage);
+        break;
+      default:
+        this.debug("Unknown endpoint message received from", endpointId.getDisplayName(), ":", endpointMessage);
+    }
+  }
+
+  /**
+   * New text message received
+   * @param id (string)
+   * @param text (string)
+   * @param ts (number)
+   * @private
+   */
+  _onMessageReceived(...args) {
+    this.debug("Message received:", args);
+  }
 
   /**
    * Handles participant status changing
@@ -800,8 +839,21 @@ class JitsiRTCClient extends AVClient {
    * @param track JitsiTrack object
    */
   _onRemoteTrackAdded(jitsiTrack) {
-    const participant = jitsiTrack.getParticipantId();
-    const userId = this._idCache[participant];
+    if (jitsiTrack.isLocal()) {
+      // Skip processing local track
+      return;
+    }
+
+    const participantId = jitsiTrack.getParticipantId();
+    const participant = this._jitsiConference.getParticipantById(participantId);
+
+    // Ignore the user if they are hidden (likely a Transcriber account)
+    if (participant?.isHidden()) {
+      this.debug("Not adding remote track for hidden user user:", participant);
+      return;
+    }
+
+    const userId = this._idCache[participantId];
     this.debug("Remote track type", jitsiTrack.getType(), "added for participant", participant, "(", userId, ")");
 
     // Call a debounced render
@@ -813,6 +865,11 @@ class JitsiRTCClient extends AVClient {
    * @param track JitsiTrack object
    */
   _onRemoteTrackRemove(jitsiTrack) {
+    if (jitsiTrack.isLocal()) {
+      // Skip processing local track
+      return;
+    }
+
     const participant = jitsiTrack.getParticipantId();
     const userId = this._idCache[participant];
     this.debug("Remote track type", jitsiTrack.getType(), "removed for participant", participant, "(", userId, ")");
@@ -842,9 +899,17 @@ class JitsiRTCClient extends AVClient {
     if (jitsiTrack.isLocal()) {
       return;
     }
-    const participant = jitsiTrack.getParticipantId();
-    const isMuted = jitsiTrack.isMuted();
 
+    const participantId = jitsiTrack.getParticipantId();
+    const participant = this._jitsiConference.getParticipantById(participantId);
+
+    // Ignore the user if they are hidden (likely a Transcriber account)
+    if (participant?.isHidden()) {
+      this.debug("No need to handle mute for hidden user user:", participant);
+      return;
+    }
+
+    const isMuted = jitsiTrack.isMuted();
     this.debug("Mute changed to", isMuted, "for", jitsiTrack.getType(), "for participant", participant);
 
     if (jitsiTrack.getType() === "video") {
@@ -885,6 +950,12 @@ class JitsiRTCClient extends AVClient {
 
   _onConferenceJoined(resolve) {
     this.debug("Conference joined event.");
+
+    // Enabled transcription if it is requested and ui.captions.caption is available
+    if (this.settings.get("client", "captionsEnabled") && typeof ui.captions?.caption === "function") {
+      this._jitsiConference.setLocalParticipantProperty("requestingTranscription", true);
+    }
+
     resolve(true);
   }
 
@@ -894,7 +965,14 @@ class JitsiRTCClient extends AVClient {
   }
 
   _onUserJoined(id, participant) {
-    let displayName = participant._displayName;
+    let displayName = participant.getDisplayName();
+
+    // Ignore the user if they are hidden (likely a Transcriber account)
+    if (participant?.isHidden()) {
+      this.info("Not showing hidden user:", participant);
+      ui.notifications.info(game.i18n.format("JITSIRTC.hiddenUserJoined", { displayName }));
+      return;
+    }
 
     // Handle Jitsi users who join the meeting directly
     if (!game.users.get(displayName)) {
@@ -956,7 +1034,16 @@ class JitsiRTCClient extends AVClient {
     this._render();
   }
 
-  _onUserLeft(id) {
+  _onUserLeft(id, participant) {
+    const displayName = participant.getDisplayName();
+
+    // Ignore the user if they are hidden (likely a Transcriber account)
+    if (participant?.isHidden()) {
+      this.debug("No need to remove hidden user:", participant);
+      ui.notifications.info(game.i18n.format("JITSIRTC.hiddenUserLeft", { displayName }));
+      return;
+    }
+
     this.debug("User left:", this._idCache[id]);
 
     // Clear breakout room cache if user is leaving a breakout room
@@ -1048,6 +1135,27 @@ class JitsiRTCClient extends AVClient {
     box.getElementsByTagName("audio")[0].volume = volume;
   }
 
+  _onRenderCameraViews(cameraViews, html) {
+    // Add the caption button if supported by the Jitsi server and ui.captions.caption is available
+    if (this.settings.get("world", "server").type === "custom"
+        && this._jitsiConnection?.options?.transcribingEnabled
+        && typeof ui.captions?.caption === "function") {
+      this._addCaptionButton(html);
+    }
+  }
+
+  _onCaptionButtonClicked(event) {
+    // Get current caption state
+    const captionsEnabled = !!this.settings.get("client", "captionsEnabled");
+
+    this.debug("Toggling captions to:", !captionsEnabled);
+
+    // Set the caption state
+    this.settings.set("client", "captionsEnabled", !captionsEnabled);
+    this._jitsiConference.setLocalParticipantProperty("requestingTranscription", !captionsEnabled);
+    event.target.classList.toggle("active", !captionsEnabled);
+  }
+
   /**
    * Mute all audio tracks
    * @private
@@ -1065,6 +1173,42 @@ class JitsiRTCClient extends AVClient {
         }
       }
     }
+  }
+
+  /**
+   * Handle transcription messages
+   * @param {Object} transcriptionMessage
+   */
+  _handleTranscription(transcriptionMessage) {
+    if (!this.settings.get("client", "captionsEnabled")) {
+      // Skip transcriptions if they aren't enabled
+      return;
+    }
+
+    this.debug("transcriptionMessage:", transcriptionMessage);
+    const participantId = transcriptionMessage.participant.id;
+    const transcriptionId = transcriptionMessage.message_id;
+    const fvttUser = game.users.get(this._idCache[participantId]);
+    const transcriptionText = transcriptionMessage.transcript[0].text;
+    ui.captions.caption(transcriptionId, fvttUser, transcriptionText);
+  }
+
+  /**
+   * Add caption button
+   * @param {Object} cameraViewsElement
+   */
+  _addCaptionButton(cameraViewsElement = ui.webrtc.element) {
+    const cameraBox = cameraViewsElement.find(`[data-user="${game.user.id}"]`);
+    const notificationElement = cameraBox.find(".notification-bar");
+
+    const captionButton = $('<a class="av-control toggle" title="Start subtitles" data-action="toggle-captions"><i class="fas fa-closed-captioning"></i></a>');
+    captionButton.on("click", (event) => game.webrtc.client._onCaptionButtonClicked(event));
+
+    // Set the button active state
+    const captionsEnabled = !!this.settings.get("client", "captionsEnabled");
+    captionButton.children("i")[0].classList.toggle("active", captionsEnabled);
+
+    notificationElement.prepend(captionButton);
   }
 
   /**
@@ -1451,6 +1595,12 @@ Hooks.on("ready", () => {
         game.webrtc.client.warn("Unknown socket event:", request);
     }
   });
+});
+
+Hooks.on("renderCameraViews", (cameraViews, html) => {
+  if (game.webrtc?.client) {
+    game.webrtc.client._onRenderCameraViews(html);
+  }
 });
 
 Hooks.on("getUserContextOptions", async (html, options) => {
