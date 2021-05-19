@@ -291,7 +291,7 @@ class JitsiRTCClient extends AVClient {
     this.debug("Toggling audio:", enable);
     if (!this._localAudioBroadcastEnabled && this.settings.client.voice.mode === "ptt") return;
     this._localAudioEnabled = enable;
-    const localAudioTrack = this._jitsiConference.getLocalAudioTrack();
+    const localAudioTrack = await this._jitsiConference.getLocalAudioTrack();
     if (localAudioTrack) {
       if (enable) {
         await localAudioTrack.unmute();
@@ -318,7 +318,7 @@ class JitsiRTCClient extends AVClient {
     this.debug("Toggling Broadcast audio:", broadcast);
 
     this._localAudioBroadcastEnabled = broadcast;
-    const localAudioTrack = this._jitsiConference.getLocalAudioTrack();
+    const localAudioTrack = await this._jitsiConference.getLocalAudioTrack();
     if (localAudioTrack) {
       if (broadcast) {
         await localAudioTrack.unmute();
@@ -343,7 +343,7 @@ class JitsiRTCClient extends AVClient {
 
     this.debug("Toggling video:", enable);
     this._localVideoEnabled = enable;
-    const localVideoTrack = this._jitsiConference.getLocalVideoTrack();
+    const localVideoTrack = await this._jitsiConference.getLocalVideoTrack();
     if (localVideoTrack) {
       if (enable) {
         await localVideoTrack.unmute();
@@ -370,21 +370,21 @@ class JitsiRTCClient extends AVClient {
         this.warn("Attempted to set user video with no active Jitsi Conference; skipping");
         return;
       }
-      const localVideoTrack = this._jitsiConference.getLocalVideoTrack();
+      const localVideoTrack = await this._jitsiConference.getLocalVideoTrack();
       if (localVideoTrack && videoElement) {
-        localVideoTrack.attach(videoElement);
+        await localVideoTrack.attach(videoElement);
       }
       return;
     }
 
     // For all other users, get their video and audio streams
     const jitsiParticipant = this._participantCache[userId];
-    const userVideoTrack = jitsiParticipant.getTracksByMediaType("video")[0];
-    const userAudioTrack = jitsiParticipant.getTracksByMediaType("audio")[0];
+    const userVideoTrack = await jitsiParticipant.getTracksByMediaType("video")[0];
+    const userAudioTrack = await jitsiParticipant.getTracksByMediaType("audio")[0];
 
     // Add the video for the user
     if (userVideoTrack) {
-      userVideoTrack.attach(videoElement);
+      await userVideoTrack.attach(videoElement);
     }
 
     // Get the audio element for the user
@@ -603,15 +603,13 @@ class JitsiRTCClient extends AVClient {
    * @private
    */
   async _addLocalTracks(localTracks) {
-    const addedTracks = [];
-
     if (!this._jitsiConference) {
       this.warn("Attempted to add local tracks with no active Jitsi Conference; skipping");
       return;
     }
 
     // Add the track to the conference
-    localTracks.forEach((localTrack) => {
+    for (const localTrack of localTracks) {
       let trackAllowed = false;
       const trackType = localTrack.getType();
 
@@ -624,21 +622,20 @@ class JitsiRTCClient extends AVClient {
 
       // Add track if allowed
       if (trackAllowed) {
-        addedTracks.push(this._jitsiConference.addTrack(localTrack).catch((err) => {
+        try {
+          await this._jitsiConference.addTrack(localTrack);
+        } catch (err) {
           this.onError("addTrack error:", err);
-        }));
+        }
       } else {
         this.warn("Attempted to add disallowed track of type:", trackType);
       }
-    });
-
-    // Wait for all tracks to be added
-    await Promise.all(addedTracks);
+    }
 
     // Check that mute/hidden/broadcast are toggled properly
     const voiceModeAlways = this.settings.get("client", "voice.mode") === "always";
-    this.toggleAudio(voiceModeAlways && this.master.canUserShareAudio(game.user.id));
-    this.toggleVideo(this.master.canUserShareVideo(game.user.id));
+    await this.toggleAudio(voiceModeAlways && this.master.canUserShareAudio(game.user.id));
+    await this.toggleVideo(this.master.canUserShareVideo(game.user.id));
     this.master.broadcast(voiceModeAlways);
   }
 
@@ -647,20 +644,16 @@ class JitsiRTCClient extends AVClient {
    * @private
    */
   async _closeLocalTracks(trackType = null) {
-    const removedTracks = [];
-
     if (!this._jitsiConference) {
       this.debug("Attempted to close local tracks with no active Jitsi Conference; skipping");
       return;
     }
 
-    this._jitsiConference.getLocalTracks().forEach((localTrack) => {
+    for (const localTrack of this._jitsiConference.getLocalTracks()) {
       if (!trackType || localTrack.getType() === trackType) {
-        removedTracks.push(localTrack.dispose());
+        await localTrack.dispose();
       }
-    });
-
-    await Promise.all(removedTracks);
+    }
   }
 
   async _shareDesktopTracks() {
@@ -815,7 +808,6 @@ class JitsiRTCClient extends AVClient {
     this._render();
   }
 
-
   /**
    * Handles incoming lost remote track
    * @param track JitsiTrack object
@@ -915,6 +907,7 @@ class JitsiRTCClient extends AVClient {
         displayName = this._addExternalUserData(id);
       } else {
         // Kick the user and stop processing
+        this.warn("Kicking unauthorized external user: ", displayName);
         this._jitsiConference.kickParticipant(id);
         return;
       }
@@ -1064,14 +1057,14 @@ class JitsiRTCClient extends AVClient {
 
     const muted = this.settings.get("client", "muteAll");
 
-    this.getConnectedUsers().forEach((userId) => {
+    for (const userId of this.getConnectedUsers()) {
       if (userId !== game.user.id) {
         const audioElement = this._getUserAudioElement(userId);
         if (audioElement) {
           audioElement.muted = muted;
         }
       }
-    });
+    }
   }
 
   /**
@@ -1281,18 +1274,26 @@ class JitsiRTCClient extends AVClient {
 
   /**
    * Display debug messages on the console if debugging is enabled
-   * @param {...*} args      Arguments to console.log
+   * @param {...*} args      Arguments to console.debug
    */
   debug(...args) {
-    if (CONFIG.debug.avclient) console.log("JitsiRTC | ", ...args);
+    if (CONFIG.debug.avclient) console.debug("JitsiRTC |", ...args);
+  }
+
+  /**
+   * Display info messages on the console
+   * @param {...*} args      Arguments to console.info
+   */
+  info(...args) {
+    if (CONFIG.debug.avclient) console.info("JitsiRTC |", ...args);
   }
 
   /**
    * Display warning messages on the console
-   * @param {...*} args      Arguments to console.error
+   * @param {...*} args      Arguments to console.warn
    */
   warn(...args) {
-    console.warn("JitsiRTC | ", ...args);
+    console.warn("JitsiRTC |", ...args);
   }
 
   /**
@@ -1300,7 +1301,7 @@ class JitsiRTCClient extends AVClient {
    * @param {...*} args      Arguments to console.error
    */
   onError(...args) {
-    console.error("JitsiRTC | ", ...args);
+    console.error("JitsiRTC |", ...args);
   }
 }
 
