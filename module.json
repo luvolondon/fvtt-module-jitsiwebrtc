@@ -2,17 +2,36 @@
   "name": "jitsirtc",
   "title": "Jitsi WebRTC client",
   "description": "Use Jitsi to handle A/V. Connect to jitsi.org or self-hosted server.",
-  "author": "Luvolondon, bekit",
+  "author": "bekit, Luvolondon",
+  "authors": [
+    {
+      "name": "bekit",
+      "email": "fvtt-module-help@bekit.net",
+      "url": "https://bekit.net",
+      "discord": "bekit#4213",
+      "patreon": "bekit",
+      "ko-fi": "bekit",
+      "twitter": "@bekit"
+    },
+    {
+      "name": "Luvolondon",
+      "url": "https://github.com/luvolondon"
+    }
+  ],
   "version": "0.5.5",
-  "styles": [],
-  "packs": [],
+  "minimumCoreVersion": "0.7.2",
+  "compatibleCoreVersion": "0.8.5",
+  "manifestPlusVersion": "1.1.0",
+  "scripts": [
+    "scripts/jitsirtc.js"
+  ],
   "socket": true,
   "url": "https://github.com/luvolondon/fvtt-module-jitsiwebrtc",
   "manifest": "https://github.com/luvolondon/fvtt-module-jitsiwebrtc/releases/latest/download/module.json",
   "download": "https://github.com/luvolondon/fvtt-module-jitsiwebrtc/releases/latest/download/fvtt-module-jitsiwebrtc.zip",
-  "minimumCoreVersion": "0.7.2",
-  "compatibleCoreVersion": "0.8.1",
-  "scripts": ["scripts/jitsirtc.js"],
+  "readme": "https://github.com/luvolondon/fvtt-module-jitsiwebrtc/blob/main/README.md",
+  "changelog": "https://github.com/luvolondon/fvtt-module-jitsiwebrtc/blob/main/CHANGELOG.md",
+  "bugs": "https://github.com/luvolondon/fvtt-module-jitsiwebrtc/issues",
   "languages": [
     {
       "lang": "en",
