@@ -28,6 +28,7 @@ class JitsiRTCClient extends AVClient {
     this._useJitsiMeet = false;
 
     this._render = debounce(this.master.render.bind(this), 2000);
+    this._reload = debounce(() => window.location.reload(), 100);
 
     this.jitsiURL = null;
   }
@@ -1281,7 +1282,7 @@ class JitsiRTCClient extends AVClient {
       game.settings.set("jitsirtc", "websocketUrl", "");
     }
 
-    window.location.reload();
+    this._reload();
   }
 
   _setConfigValues() {
@@ -1481,7 +1482,7 @@ Hooks.on("init", () => {
     config: true,
     default: false,
     type: Boolean,
-    onChange: () => window.location.reload(),
+    onChange: () => game.webrtc.client._reload(),
   });
   game.settings.register("jitsirtc", "externalUsersUrl", {
     name: "JITSIRTC.externalUsersUrl",
@@ -1518,7 +1519,7 @@ Hooks.on("init", () => {
     config: true,
     default: false,
     type: Boolean,
-    onChange: () => window.location.reload(),
+    onChange: () => game.webrtc.client._reload(),
   });
   game.settings.register("jitsirtc", "customUrls", {
     name: "JITSIRTC.customUrls",
@@ -1536,7 +1537,7 @@ Hooks.on("init", () => {
     scope: "world",
     type: String,
     config: game.settings.get("jitsirtc", "customUrls"),
-    onChange: () => window.location.reload(),
+    onChange: () => game.webrtc.client._reload(),
   });
   game.settings.register("jitsirtc", "mucUrl", {
     name: "JITSIRTC.mucUrl",
@@ -1545,7 +1546,7 @@ Hooks.on("init", () => {
     scope: "world",
     type: String,
     config: game.settings.get("jitsirtc", "customUrls"),
-    onChange: () => window.location.reload(),
+    onChange: () => game.webrtc.client._reload(),
   });
   game.settings.register("jitsirtc", "focusUrl", {
     name: "JITSIRTC.focusUrl",
@@ -1554,7 +1555,7 @@ Hooks.on("init", () => {
     scope: "world",
     type: String,
     config: game.settings.get("jitsirtc", "customUrls"),
-    onChange: () => window.location.reload(),
+    onChange: () => game.webrtc.client._reload(),
   });
   game.settings.register("jitsirtc", "boshUrl", {
     name: "JITSIRTC.boshUrl",
@@ -1563,7 +1564,7 @@ Hooks.on("init", () => {
     scope: "world",
     type: String,
     config: game.settings.get("jitsirtc", "customUrls"),
-    onChange: () => window.location.reload(),
+    onChange: () => game.webrtc.client._reload(),
   });
   game.settings.register("jitsirtc", "websocketUrl", {
     name: "JITSIRTC.websocketUrl",
@@ -1572,7 +1573,7 @@ Hooks.on("init", () => {
     scope: "world",
     type: String,
     config: game.settings.get("jitsirtc", "customUrls"),
-    onChange: () => window.location.reload(),
+    onChange: () => game.webrtc.client._reload(),
   });
   game.settings.register("jitsirtc", "debug", {
     name: "JITSIRTC.debug",
