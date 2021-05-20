@@ -108,8 +108,13 @@ class JitsiRTCClient extends AVClient {
     // Set the connection as active
     this._active = true;
 
-    // TODO check for success with these before returning?
-    await this._connectServer(this.settings.get("world", "server"));
+    // Attempt to connect to the server
+    const serverConnected = await this._connectServer(this.settings.get("world", "server"));
+    if (!serverConnected) {
+      this.onError("Server connection failed");
+      return false;
+    }
+
     await this._initializeLocal(this.settings.client);
 
     const jitsiId = this._jitsiConference.myUserId();
