@@ -565,6 +565,9 @@ class JitsiRTCClient extends AVClient {
     // Add our tracks to the conference and our stream
     await this._addLocalTracks(localTracks);
 
+    // Call a debounced render
+    this._render();
+
     return true;
   }
 
@@ -674,6 +677,9 @@ class JitsiRTCClient extends AVClient {
 
     // Add the desktop tracks to the stream
     await this._addLocalTracks(desktopTracks);
+
+    // Call a debounced render
+    this._render();
 
     return true;
   }
