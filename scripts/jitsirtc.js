@@ -1239,8 +1239,15 @@ class JitsiRTCClient extends AVClient {
    * @private
    */
   async _loadScript(scriptSrc) {
-    this.debug("Loading script", scriptSrc);
+    this.debug("Loading script:", scriptSrc);
     return new Promise((resolve, reject) => {
+      // Skip loading script if it is already loaded
+      if ($(`script[src="${scriptSrc}"]`).length > 0) {
+        this.debug("Script already loaded:", scriptSrc);
+        resolve(true);
+        return;
+      }
+
       const scriptElement = document.createElement("script");
       $("head").append(scriptElement);
 
