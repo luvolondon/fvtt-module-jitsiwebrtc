@@ -1,10 +1,12 @@
 import {
   DEFAULT_JITSI_SERVER,
-  LANG_NAME,
   MODULE_NAME,
-} from "./Constants.js";
+} from "./utils/constants.js";
 
-import * as log from "./Logging.js";
+import * as helpers from "./utils/helpers.js";
+import * as log from "./utils/logging.js";
+
+import JitsiClient from "./JitsiClient.js";
 
 /**
  * An AVClient implementation that uses WebRTC and the Jitsi Meet API library.
@@ -16,29 +18,7 @@ export default class JitsiAVClient extends AVClient {
   constructor(master, settings) {
     super(master, settings);
 
-    this._jitsiConnection = null;
-    this._jitsiConference = null;
-    this._active = false;
-    this._server = null;
-    this._room = null;
-    this._usernameCache = {};
-    this._participantCache = {};
-    this._idCache = {};
-    this._externalUserCache = {};
-    this._externalUserIdCache = {};
-    this._loginSuccessHandler = null;
-    this._loginFailureHandler = null;
-    this._onDisconnectHandler = null;
-    this._localAudioEnabled = false;
-    this._localAudioBroadcastEnabled = false;
-    this._localVideoEnabled = false;
-    this._breakoutRoom = null;
-    this._useJitsiMeet = false;
-
-    this._render = debounce(this.master.render.bind(this), 2000);
-    this._reload = debounce(() => window.location.reload(), 100);
-
-    this.jitsiURL = null;
+    this._jitsiClient = new JitsiClient(this);
   }
 
   /* -------------------------------------------- */
@@ -53,25 +33,25 @@ export default class JitsiAVClient extends AVClient {
   async initialize() {
     log.debug("JitsiAVClient initialize");
     if (this.settings.get("world", "server").type === "custom") {
-      this._server = this.settings.get("world", "server").url;
+      this._jitsiClient.server = this.settings.get("world", "server").url;
     } else {
       // TODO: set up server types for beta / default jitsi servers instead of just the "FVTT" type
-      this._server = DEFAULT_JITSI_SERVER;
+      this._jitsiClient.server = DEFAULT_JITSI_SERVER;
     }
 
     // Don't fully initialize if client has enabled the option to use the full Jitsi Meet client
     if (game.settings.get(MODULE_NAME, "useJitsiMeet")) {
       log.debug("useJitsiMeet set, not initializing JitsiRTC");
-      this._useJitsiMeet = true;
+      this._jitsiClient.useJitsiMeet = true;
       return true;
     }
 
     // Load lib-jitsi-meet and config values from the selected server
-    await this._loadScript(`https://${this._server}/libs/lib-jitsi-meet.min.js`);
-    await this._loadScript(`https://${this._server}/config.js`);
+    await helpers.loadScript(`https://${this._jitsiClient.server}/libs/lib-jitsi-meet.min.js`);
+    await helpers.loadScript(`https://${this._jitsiClient.server}/config.js`);
 
     // Set up default config values
-    this._setConfigValues();
+    this._jitsiClient.setConfigValues();
 
     if (this.settings.get("client", "voice.mode") === "activity") {
       log.debug("Disabling voice activation mode as it is handled natively by Jitsi");
@@ -102,29 +82,29 @@ export default class JitsiAVClient extends AVClient {
     log.debug("JitsiAVClient connect");
 
     // If useJitsiMeet is enabled, send a join message instead of connecting
-    if (this._useJitsiMeet) {
+    if (this._jitsiClient.useJitsiMeet) {
       log.debug("useJitsiMeet set, not connecting to JitsiRTC");
-      this._sendJoinMessage();
+      this._jitsiClient.sendJoinMessage();
       return true;
     }
 
     await this.disconnect(); // Disconnect first, just in case
 
     // Set the connection as active
-    this._active = true;
+    this._jitsiClient.active = true;
 
     // Attempt to connect to the server
-    const serverConnected = await this._connectServer(this.settings.get("world", "server"));
+    const serverConnected = await this._jitsiClient.connectServer(this.settings.get("world", "server"));
     if (!serverConnected) {
       log.error("Server connection failed");
       return false;
     }
 
-    await this._initializeLocal(this.settings.client);
+    await this._jitsiClient.initializeLocal(this.settings.client);
 
-    const jitsiId = this._jitsiConference.myUserId();
-    this._usernameCache[game.user.id] = jitsiId;
-    this._idCache[jitsiId] = game.user.id;
+    const jitsiId = this._jitsiClient.jitsiConference.myUserId();
+    this._jitsiClient.usernameCache[game.user.id] = jitsiId;
+    this._jitsiClient.idCache[jitsiId] = game.user.id;
     return true;
   }
 
@@ -140,39 +120,39 @@ export default class JitsiAVClient extends AVClient {
     let disconnected = false;
 
     // Set the connection as inactive
-    this._active = false;
+    this._jitsiClient.active = false;
 
     // Dispose of tracks
-    await this._closeLocalTracks();
+    await this._jitsiClient.closeLocalTracks();
 
     // Leave the room
-    if (this._jitsiConference) {
+    if (this._jitsiClient.jitsiConference) {
       disconnected = true;
       try {
-        await this._jitsiConference.leave();
+        await this._jitsiClient.jitsiConference.leave();
       } catch (err) {
         // Already left
       }
-      this._jitsiConference = null;
+      this._jitsiClient.jitsiConference = null;
     }
 
     // Close the connections
-    if (this._jitsiConnection) {
+    if (this._jitsiClient.jitsiConnection) {
       disconnected = true;
-      this._jitsiConnection.removeEventListener(
+      this._jitsiClient.jitsiConnection.removeEventListener(
         JitsiMeetJS.events.connection.CONNECTION_ESTABLISHED,
-        this._loginSuccessHandler,
+        this._jitsiClient.loginSuccessHandler,
       );
-      this._jitsiConnection.removeEventListener(
+      this._jitsiClient.jitsiConnection.removeEventListener(
         JitsiMeetJS.events.connection.CONNECTION_FAILED,
-        this._loginFailureHandler,
+        this._jitsiClient.loginFailureHandler,
       );
-      this._jitsiConnection.removeEventListener(
+      this._jitsiClient.jitsiConnection.removeEventListener(
         JitsiMeetJS.events.connection.CONNECTION_DISCONNECTED,
-        this._onDisconnectHandler,
+        this._jitsiClient.onDisconnectHandler,
       );
 
-      await this._jitsiConnection.disconnect();
+      await this._jitsiClient.jitsiConnection.disconnect();
     }
 
     return disconnected;
@@ -191,7 +171,7 @@ export default class JitsiAVClient extends AVClient {
     return new Promise((resolve) => {
       try {
         JitsiMeetJS.mediaDevices.enumerateDevices((list) => {
-          resolve(this._deviceInfoToObject(list, "audiooutput"));
+          resolve(this._jitsiClient.deviceInfoToObject(list, "audiooutput"));
         });
       } catch (err) {
         log.error("getAudioSinks error:", err);
@@ -211,7 +191,7 @@ export default class JitsiAVClient extends AVClient {
     return new Promise((resolve) => {
       try {
         JitsiMeetJS.mediaDevices.enumerateDevices((list) => {
-          resolve(this._deviceInfoToObject(list, "audioinput"));
+          resolve(this._jitsiClient.deviceInfoToObject(list, "audioinput"));
         });
       } catch (err) {
         log.error("getAudioSources error:", err);
@@ -231,7 +211,7 @@ export default class JitsiAVClient extends AVClient {
     return new Promise((resolve) => {
       try {
         JitsiMeetJS.mediaDevices.enumerateDevices((list) => {
-          resolve(this._deviceInfoToObject(list, "videoinput"));
+          resolve(this._jitsiClient.deviceInfoToObject(list, "videoinput"));
         });
       } catch (err) {
         log.error("getVideoSources error:", err);
@@ -250,7 +230,7 @@ export default class JitsiAVClient extends AVClient {
      * @return {string[]}           The connected User IDs
      */
   getConnectedUsers() {
-    return Object.keys(this._usernameCache);
+    return Object.keys(this._jitsiClient.usernameCache);
   }
 
   /* -------------------------------------------- */
@@ -273,7 +253,7 @@ export default class JitsiAVClient extends AVClient {
      * @return {boolean}
      */
   isAudioEnabled() {
-    return this._localAudioEnabled;
+    return this._jitsiClient.localAudioEnabled;
   }
 
   /* -------------------------------------------- */
@@ -283,7 +263,7 @@ export default class JitsiAVClient extends AVClient {
      * @return {boolean}
      */
   isVideoEnabled() {
-    return this._localVideoEnabled;
+    return this._jitsiClient.localVideoEnabled;
   }
 
   /* -------------------------------------------- */
@@ -295,14 +275,14 @@ export default class JitsiAVClient extends AVClient {
      */
   async toggleAudio(enable) {
     // If useJitsiMeet is enabled, return
-    if (this._useJitsiMeet) {
+    if (this._jitsiClient.useJitsiMeet) {
       return;
     }
 
     log.debug("Toggling audio:", enable);
-    if (!this._localAudioBroadcastEnabled && this.settings.client.voice.mode === "ptt") return;
-    this._localAudioEnabled = enable;
-    const localAudioTrack = await this._jitsiConference.getLocalAudioTrack();
+    if (!this._jitsiClient.localAudioBroadcastEnabled && this.settings.client.voice.mode === "ptt") return;
+    this._jitsiClient.localAudioEnabled = enable;
+    const localAudioTrack = await this._jitsiClient.jitsiConference.getLocalAudioTrack();
     if (localAudioTrack) {
       if (enable) {
         await localAudioTrack.unmute();
@@ -322,14 +302,14 @@ export default class JitsiAVClient extends AVClient {
      */
   async toggleBroadcast(broadcast) {
     // If useJitsiMeet is enabled, return
-    if (this._useJitsiMeet) {
+    if (this._jitsiClient.useJitsiMeet) {
       return;
     }
 
     log.debug("Toggling Broadcast audio:", broadcast);
 
-    this._localAudioBroadcastEnabled = broadcast;
-    const localAudioTrack = await this._jitsiConference.getLocalAudioTrack();
+    this._jitsiClient.localAudioBroadcastEnabled = broadcast;
+    const localAudioTrack = await this._jitsiClient.jitsiConference.getLocalAudioTrack();
     if (localAudioTrack) {
       if (broadcast) {
         await localAudioTrack.unmute();
@@ -348,13 +328,13 @@ export default class JitsiAVClient extends AVClient {
      */
   async toggleVideo(enable) {
     // If useJitsiMeet is enabled, return
-    if (this._useJitsiMeet) {
+    if (this._jitsiClient.useJitsiMeet) {
       return;
     }
 
     log.debug("Toggling video:", enable);
-    this._localVideoEnabled = enable;
-    const localVideoTrack = await this._jitsiConference.getLocalVideoTrack();
+    this._jitsiClient.localVideoEnabled = enable;
+    const localVideoTrack = await this._jitsiClient.jitsiConference.getLocalVideoTrack();
     if (localVideoTrack) {
       if (enable) {
         await localVideoTrack.unmute();
@@ -377,11 +357,11 @@ export default class JitsiAVClient extends AVClient {
 
     // If this if for our local user, attach our video track using Jitsi
     if (userId === game.user.id) {
-      if (!this._jitsiConference) {
+      if (!this._jitsiClient.jitsiConference) {
         log.warn("Attempted to set user video with no active Jitsi Conference; skipping");
         return;
       }
-      const localVideoTrack = await this._jitsiConference.getLocalVideoTrack();
+      const localVideoTrack = await this._jitsiClient.jitsiConference.getLocalVideoTrack();
       if (localVideoTrack && videoElement) {
         await localVideoTrack.attach(videoElement);
       }
@@ -389,7 +369,7 @@ export default class JitsiAVClient extends AVClient {
     }
 
     // For all other users, get their video and audio streams
-    const jitsiParticipant = this._participantCache[userId];
+    const jitsiParticipant = this._jitsiClient.participantCache[userId];
     const userVideoTrack = await jitsiParticipant.getTracksByMediaType("video")[0];
     const userAudioTrack = await jitsiParticipant.getTracksByMediaType("audio")[0];
 
@@ -399,7 +379,7 @@ export default class JitsiAVClient extends AVClient {
     }
 
     // Get the audio element for the user
-    const audioElement = this._getUserAudioElement(userId, videoElement);
+    const audioElement = this._jitsiClient.getUserAudioElement(userId, videoElement);
 
     // Add the audio for the user
     if (userAudioTrack && audioElement) {
@@ -453,990 +433,7 @@ export default class JitsiAVClient extends AVClient {
 
     // Change muteAll
     if (keys.some((k) => ["client.muteAll"].includes(k))) {
-      this._muteAll();
+      this._jitsiClient.muteAll();
     }
-  }
-
-  /* -------------------------------------------- */
-  /*  JitsiRTC Internal methods                   */
-  /* -------------------------------------------- */
-
-  /**
-   * Connect to the WebRTC server and configure ICE/TURN servers
-   * @return {Promise}
-   * @private
-   */
-  async _connectServer(connectionSettings) {
-    let auth = {};
-
-    return new Promise((resolve) => {
-      if (connectionSettings.type === "custom") {
-        // Set up auth
-        auth = {
-          id: connectionSettings.username,
-          password: connectionSettings.password,
-        };
-      }
-
-      // Set a room name if one doesn't yet exist
-      if (!connectionSettings.room) {
-        log.warn("No meeting room set, creating random name.");
-        this.settings.set("world", "server.room", randomID(32));
-      }
-
-      if (this._breakoutRoom) {
-        this._room = this._breakoutRoom;
-      } else {
-        this._room = connectionSettings.room;
-      }
-      log.debug("Meeting room name:", this._room);
-
-      // Add the room name to the bosh & websocket URLs to ensure all users end up on the same shard
-      config.bosh += `?room=${this._room}`;
-      config.websocket += `?room=${this._room}`;
-
-      this._jitsiConnection = new JitsiMeetJS.JitsiConnection(null, null, config);
-
-      log.debug("Connection created with options:", config);
-
-      this._loginSuccessHandler = this._loginSuccess.bind(this, resolve);
-      this._jitsiConnection.addEventListener(
-        JitsiMeetJS.events.connection.CONNECTION_ESTABLISHED,
-        this._loginSuccessHandler,
-      );
-
-      this._loginFailureHandler = this._loginFailure.bind(this, resolve);
-      this._jitsiConnection.addEventListener(
-        JitsiMeetJS.events.connection.CONNECTION_FAILED,
-        this._loginFailureHandler,
-      );
-
-      this._onDisconnectHandler = this._onDisconnect.bind(this);
-      this._jitsiConnection.addEventListener(
-        JitsiMeetJS.events.connection.CONNECTION_DISCONNECTED,
-        this._onDisconnectHandler,
-      );
-
-      // Set Jitsi URL
-      this.jitsiURL = `https://${config.hosts.domain}/${this._room}`;
-
-      // If external users are allowed, add the setting
-      if (game.settings.get(MODULE_NAME, "allowExternalUsers")) {
-        game.settings.set(MODULE_NAME, "externalUsersUrl", this.jitsiURL);
-      }
-
-      // Connect
-      this._jitsiConnection.connect(auth);
-
-      log.debug("Async call to connect started.");
-    });
-  }
-
-  async _initializeLocal({ audioSrc, videoSrc } = {}) {
-    await this._closeLocalTracks();
-
-    // Check for requested/allowed audio/video
-    const audioRequested = audioSrc && this.master.canUserBroadcastAudio(game.user.id);
-    const videoRequested = videoSrc && this.master.canUserBroadcastVideo(game.user.id);
-
-    const devlist = [];
-    let localTracks = [];
-    if (audioRequested) devlist.push("audio");
-    if (videoRequested) devlist.push("video");
-
-    // Create our tracks
-    if (devlist.length > 0) {
-      localTracks = await this._createLocalTracks(devlist, audioSrc, videoSrc);
-
-      // In case of failure attempting to capture A/V, try to capture audio only or video only
-      if (!localTracks) {
-        let capturedOnly = "Audio";
-        if (audioRequested) {
-          // Try without video first
-          localTracks = await this._createLocalTracks(["audio"], audioSrc, null);
-        }
-        if (!localTracks && videoRequested) {
-          // If it fails, try video only
-          capturedOnly = "Video";
-          localTracks = await this._createLocalTracks(["video"], null, videoSrc);
-        }
-        if (localTracks) {
-          // We successfully started audio or video
-          log.warn(game.i18n.localize(`WEBRTC.CaptureWarning${capturedOnly}`));
-          ui.notifications.warn(game.i18n.localize(`WEBRTC.CaptureWarning${capturedOnly}`));
-        } else {
-          // Nothing worked, return false
-          log.warn(game.i18n.localize("WEBRTC.CaptureErrorAudioVideo"));
-          ui.notifications.warn(game.i18n.localize("WEBRTC.CaptureErrorAudioVideo"));
-          return false;
-        }
-      }
-    }
-
-    // Add our tracks to the conference and our stream
-    await this._addLocalTracks(localTracks);
-
-    // Call a debounced render
-    this._render();
-
-    return true;
-  }
-
-  async _createLocalTracks(devlist, audioSrc, videoSrc) {
-    log.debug("Device list for createLocalTracks:", devlist);
-
-    // Try to create the requested tracks
-    let localTracks = [];
-    try {
-      localTracks = await JitsiMeetJS.createLocalTracks({
-        devices: devlist,
-        resolution: 240,
-        cameraDeviceId: videoSrc,
-        micDeviceId: audioSrc,
-        desktopSharingFrameRate: {
-          min: 5,
-          max: 30,
-        },
-        constraints: {
-          video: {
-            aspectRatio: 4 / 3,
-          },
-        },
-      });
-    } catch (err) {
-      log.warn("createLocalTracks error:", err);
-      return null;
-    }
-
-    // Return the created tracks
-    return localTracks;
-  }
-
-  /**
-   * Local tracks added handler
-   * @private
-   */
-  async _addLocalTracks(localTracks) {
-    if (!this._jitsiConference) {
-      log.warn("Attempted to add local tracks with no active Jitsi Conference; skipping");
-      return;
-    }
-
-    // Add the track to the conference
-    for (const localTrack of localTracks) {
-      let trackAllowed = false;
-      const trackType = localTrack.getType();
-
-      // Determine if the user is allowed to add this track type
-      if (trackType === "audio" && this.master.canUserBroadcastAudio(game.user.id)) {
-        trackAllowed = true;
-      } else if (trackType === "video" && this.master.canUserBroadcastVideo(game.user.id)) {
-        trackAllowed = true;
-      }
-
-      // Add track if allowed
-      if (trackAllowed) {
-        try {
-          await this._jitsiConference.addTrack(localTrack);
-        } catch (err) {
-          log.error("addTrack error:", err);
-        }
-      } else {
-        log.warn("Attempted to add disallowed track of type:", trackType);
-      }
-    }
-
-    // Check that mute/hidden/broadcast are toggled properly
-    const voiceModeAlways = this.settings.get("client", "voice.mode") === "always";
-    await this.toggleAudio(voiceModeAlways && this.master.canUserShareAudio(game.user.id));
-    await this.toggleVideo(this.master.canUserShareVideo(game.user.id));
-    this.master.broadcast(voiceModeAlways);
-  }
-
-  /**
-   * Remove local tracks from the conference
-   * @private
-   */
-  async _closeLocalTracks(trackType = null) {
-    if (!this._jitsiConference) {
-      log.debug("Attempted to close local tracks with no active Jitsi Conference; skipping");
-      return;
-    }
-
-    for (const localTrack of this._jitsiConference.getLocalTracks()) {
-      if (!trackType || localTrack.getType() === trackType) {
-        await localTrack.dispose();
-      }
-    }
-  }
-
-  async _shareDesktopTracks() {
-    const desktopTracks = await game.webrtc.client._createLocalTracks(["desktop"], null, null);
-
-    if (!desktopTracks) {
-      log.warn("Could not create desktop tracks");
-      return false;
-    }
-
-    if (desktopTracks.length === 1) {
-      // Only video shared, close existing track
-      await this._closeLocalTracks("video");
-    } else {
-      // Video and Audio shared, close all tracks
-      await this._closeLocalTracks();
-    }
-
-    // Add the desktop tracks to the stream
-    await this._addLocalTracks(desktopTracks);
-
-    // Call a debounced render
-    this._render();
-
-    return true;
-  }
-
-  /**
-   * Connection success callback
-   * @private
-   */
-  _loginSuccess(resolve) {
-    // Set up room handle
-    this._jitsiConference = this._jitsiConnection.initJitsiConference(this._room, config);
-    log.debug("Conference joined:", this._jitsiConference);
-
-    // Set our jitsi username to our FVTT user ID
-    this._jitsiConference.setDisplayName(game.user.id);
-
-    // Set the preferred resolution of video to send and receive
-    this._jitsiConference.setSenderVideoConstraint(240);
-    this._jitsiConference.setReceiverVideoConstraint(240);
-
-    // Set up jitsi event handles
-    this._jitsiConference.on(
-      JitsiMeetJS.events.conference.CONFERENCE_JOINED,
-      this._onConferenceJoined.bind(this, resolve),
-    );
-    this._jitsiConference.on(
-      JitsiMeetJS.events.conference.CONFERENCE_ERROR,
-      this._onConferenceError.bind(this, resolve),
-    );
-    this._jitsiConference.on(
-      JitsiMeetJS.events.conference.ENDPOINT_MESSAGE_RECEIVED,
-      this._onEndpointMessageReceived.bind(this),
-    );
-    this._jitsiConference.on(
-      JitsiMeetJS.events.conference.MESSAGE_RECEIVED,
-      this._onMessageReceived.bind(this),
-    );
-    this._jitsiConference.on(
-      JitsiMeetJS.events.conference.CONNECTION_INTERRUPTED,
-      this._onConnectionInterrupted.bind(this),
-    );
-    this._jitsiConference.on(
-      JitsiMeetJS.events.conference.PARTICIPANT_CONN_STATUS_CHANGED,
-      this._onParticipantConnStatusChanged.bind(this),
-    );
-    this._jitsiConference.on(
-      JitsiMeetJS.events.conference.SUSPEND_DETECTED,
-      this._onSuspendDetected.bind(this),
-    );
-    this._jitsiConference.on(
-      JitsiMeetJS.events.conference.TRACK_ADDED,
-      this._onRemoteTrackAdded.bind(this),
-    );
-    this._jitsiConference.on(
-      JitsiMeetJS.events.conference.TRACK_REMOVED,
-      this._onRemoteTrackRemove.bind(this),
-    );
-    this._jitsiConference.on(
-      JitsiMeetJS.events.conference.TRACK_AUDIO_LEVEL_CHANGED,
-      this._onTrackAudioLevelChanged.bind(this),
-    );
-    this._jitsiConference.on(
-      JitsiMeetJS.events.conference.TRACK_MUTE_CHANGED,
-      this._onTrackMuteChanged.bind(this),
-    );
-    this._jitsiConference.on(
-      JitsiMeetJS.events.conference.USER_JOINED,
-      this._onUserJoined.bind(this),
-    );
-    this._jitsiConference.on(
-      JitsiMeetJS.events.conference.USER_LEFT,
-      this._onUserLeft.bind(this),
-    );
-
-    // Join the room
-    this._jitsiConference.join();
-  }
-
-  /**
-   * Connection failure callback
-   * @private
-   */
-  _loginFailure(resolve, errorCode, message) {
-    log.error("Login error:", errorCode, message);
-    resolve(false);
-  }
-
-  /**
-   * Called when the connection to the signaling server is lost
-   * @private
-   */
-  _onDisconnect(...args) {
-    // If we should be active, reconnect
-    if (this._active) {
-      log.warn("Connection disconnected; reconnecting", args);
-      this.master.connect();
-    }
-  }
-
-  /**
-   * Called when the connection to the ICE server is interrupted
-   * @private
-   */
-  _onConnectionInterrupted() {
-    // If we should be active, reconnect
-    if (this._active) {
-      log.warn("Connection interrupted; reconnecting");
-      this.master.connect();
-    }
-  }
-
-  /**
-   * Notifies that a new message from another participant is received on a data channel
-   * @param endpointId endpoint ID (participant ID)
-   * @param endpointMessage the endpoint message
-   * @private
-   */
-  _onEndpointMessageReceived(endpointId, endpointMessage) {
-    switch (endpointMessage.type) {
-      case "e2e-ping-request":
-        break;
-      case "e2e-ping-response":
-        break;
-      case "transcription-result":
-        // Handle a transcription message
-        this._handleTranscription(endpointMessage);
-        break;
-      default:
-        log.debug("Unknown endpoint message received from", endpointId.getDisplayName(), ":", endpointMessage);
-    }
-  }
-
-  /**
-   * New text message received
-   * @param id (string)
-   * @param text (string)
-   * @param ts (number)
-   * @private
-   */
-  _onMessageReceived(...args) {
-    log.debug("Message received:", args);
-  }
-
-  /**
-   * Handles participant status changing
-   * @param endpointId endpoint ID (participant ID)
-   * @param newStatus the new participant status
-   */
-  _onParticipantConnStatusChanged(endpointId, newStatus) {
-    const userId = this._idCache[endpointId];
-    log.warn("Status changed for participant", endpointId, "(", userId, "):", newStatus);
-  }
-
-  /**
-   * Handles notification of suspend detected
-   */
-  _onSuspendDetected() {
-    log.warn("Suspend detected");
-  }
-
-  /**
-   * Handles incoming remote track
-   * @param track JitsiTrack object
-   */
-  _onRemoteTrackAdded(jitsiTrack) {
-    if (jitsiTrack.isLocal()) {
-      // Skip processing local track
-      return;
-    }
-
-    const participantId = jitsiTrack.getParticipantId();
-    const participant = this._jitsiConference.getParticipantById(participantId);
-
-    // Ignore the user if they are hidden (likely a Transcriber account)
-    if (participant?.isHidden()) {
-      log.debug("Not adding remote track for hidden user user:", participant);
-      return;
-    }
-
-    const userId = this._idCache[participantId];
-    log.debug("Remote track type", jitsiTrack.getType(), "added for participant", participant, "(", userId, ")");
-
-    // Call a debounced render
-    this._render();
-  }
-
-  /**
-   * Handles incoming lost remote track
-   * @param track JitsiTrack object
-   */
-  _onRemoteTrackRemove(jitsiTrack) {
-    if (jitsiTrack.isLocal()) {
-      // Skip processing local track
-      return;
-    }
-
-    const participant = jitsiTrack.getParticipantId();
-    const userId = this._idCache[participant];
-    log.debug("Remote track type", jitsiTrack.getType(), "removed for participant", participant, "(", userId, ")");
-
-    // Call a debounced render
-    this._render();
-  }
-
-  /**
-   * Handles audio level of JitsiTrack has changed
-   * @param participantId string
-   * @param audioLevel number
-   */
-  _onTrackAudioLevelChanged(participantId, audioLevel) {
-    if (audioLevel > 0.01) {
-      ui.webrtc.setUserIsSpeaking(this._idCache[participantId], true);
-    } else {
-      ui.webrtc.setUserIsSpeaking(this._idCache[participantId], false);
-    }
-  }
-
-  /**
-   * Handles JitsiTrack was muted or unmuted
-   * @param jitsiTrack JitsiTrack object
-   */
-  _onTrackMuteChanged(jitsiTrack) {
-    if (jitsiTrack.isLocal()) {
-      return;
-    }
-
-    const participantId = jitsiTrack.getParticipantId();
-    const participant = this._jitsiConference.getParticipantById(participantId);
-
-    // Ignore the user if they are hidden (likely a Transcriber account)
-    if (participant?.isHidden()) {
-      log.debug("No need to handle mute for hidden user user:", participant);
-      return;
-    }
-
-    const isMuted = jitsiTrack.isMuted();
-    log.debug("Mute changed to", isMuted, "for", jitsiTrack.getType(), "for participant", participant);
-
-    if (jitsiTrack.getType() === "video") {
-      this._render();
-    }
-  }
-
-  _addExternalUserData(id) {
-    log.debug("Adding external Jitsi user:", id);
-
-    // Create a new Jitsi ID for the user
-    const externalUserId = randomID(16);
-    this._externalUserIdCache[id] = externalUserId;
-
-    // Create user data for the external user
-    const data = {
-      _id: externalUserId,
-      active: true,
-      password: "",
-      role: CONST.USER_ROLES.NONE,
-      permissions: {
-        BROADCAST_AUDIO: true,
-        BROADCAST_VIDEO: true,
-      },
-      avatar: CONST.DEFAULT_TOKEN,
-      character: "",
-      color: "#ffffff",
-      flags: {},
-      name: game.webrtc.client._externalUserCache[id],
-    };
-
-    // Add the external user as a temporary user entity
-    const externalUser = new User(data);
-    game.users.insert(externalUser);
-
-    return externalUserId;
-  }
-
-  _onConferenceJoined(resolve) {
-    log.debug("Conference joined event.");
-
-    // Enabled transcription if it is requested and ui.captions.caption is available
-    if (this.settings.get("client", "captionsEnabled") && typeof ui.captions?.caption === "function") {
-      this._jitsiConference.setLocalParticipantProperty("requestingTranscription", true);
-    }
-
-    resolve(true);
-  }
-
-  _onConferenceError(resolve, errorCode) {
-    log.error("Conference error:", errorCode);
-    resolve(false);
-  }
-
-  _onUserJoined(id, participant) {
-    let displayName = participant.getDisplayName();
-
-    // Ignore the user if they are hidden (likely a Transcriber account)
-    if (participant?.isHidden()) {
-      log.info("Not showing hidden user:", participant);
-      ui.notifications.info(game.i18n.format(`${LANG_NAME}.hiddenUserJoined`, { displayName }));
-      return;
-    }
-
-    // Handle Jitsi users who join the meeting directly
-    if (!game.users.get(displayName)) {
-      // Save the Jitsi display name into an external users cache
-      this._externalUserCache[id] = displayName || "Jitsi User";
-
-      // Add the external user as a temporary user entity if external users are allowed
-      if (game.settings.get(MODULE_NAME, "allowExternalUsers")) {
-        // Set the stored user name equal to the ID created when adding the user
-        displayName = this._addExternalUserData(id);
-      } else {
-        // Kick the user and stop processing
-        log.warn("Kicking unauthorized external user: ", displayName);
-        this._jitsiConference.kickParticipant(id);
-        return;
-      }
-    }
-
-    const fvttUser = game.users.get(displayName);
-    if (!fvttUser.active) {
-      // Force the user to be active. If they are signing in to Jitsi, they should be online.
-      log.warn("Joining user", displayName, "is not listed as active. Setting to active.");
-      fvttUser.active = true;
-      ui.players.render();
-    }
-
-    this._usernameCache[displayName] = id;
-    this._participantCache[displayName] = participant;
-    this._idCache[id] = displayName;
-
-    // Clear breakout room cache if user is joining the main conference
-    if (!this._breakoutRoom) {
-      this.settings.set("client", `users.${displayName}.jitsiBreakoutRoom`, "");
-    }
-
-    // Select all participants so their video stays active
-    this._jitsiConference.selectParticipants(Object.keys(game.webrtc.client._idCache));
-
-    /** Set all participants to on-stage so video quality is improved.
-     * We also need to set the default constraints to avoid them getting set back to jitsi defaults.
-     * Uses the new format described here:
-     * https://github.com/jitsi/jitsi-videobridge/blob/master/doc/allocation.md
-    */
-    try {
-      this._jitsiConference.setReceiverConstraints({
-        lastN: -1,
-        onStageEndpoints: Object.keys(game.webrtc.client._idCache),
-        defaultConstraints: {
-          maxHeight: 240,
-          maxFrameRate: 30,
-        },
-      });
-    } catch (err) {
-      log.debug("setReceiverConstraints not supported by this Jitsi version; skipping");
-    }
-
-    log.debug("User joined:", displayName);
-
-    this._render();
-  }
-
-  _onUserLeft(id, participant) {
-    const displayName = participant.getDisplayName();
-
-    // Ignore the user if they are hidden (likely a Transcriber account)
-    if (participant?.isHidden()) {
-      log.debug("No need to remove hidden user:", participant);
-      ui.notifications.info(game.i18n.format(`${LANG_NAME}.hiddenUserLeft`, { displayName }));
-      return;
-    }
-
-    log.debug("User left:", this._idCache[id]);
-
-    // Clear breakout room cache if user is leaving a breakout room
-    if (
-      this.settings.getUser(this._idCache[id]).jitsiBreakoutRoom === this._room
-      && this._room === this._breakoutRoom
-    ) {
-      this.settings.set("client", `users.${this._idCache[id]}.jitsiBreakoutRoom`, "");
-    }
-
-    delete this._usernameCache[this._idCache[id]];
-    delete this._participantCache[this._idCache[id]];
-    delete this._idCache[id];
-
-    // Remove the temporary user entity if they are an external Jitsi user
-    if (this._externalUserCache[id]) {
-      game.users.delete(this._externalUserIdCache[id]);
-      delete this._externalUserIdCache[id];
-      delete this._externalUserCache[id];
-    }
-
-    this._render();
-  }
-
-  /**
-   * Provide an array of JitsiTrack objects for the given user ID
-   * @param {string} userId            The User id
-   * @return {JitsiTrack[]|null} The Audio Tracks for the user, or null if the user does not
-   *                                    have any
-   * @private
-   */
-  _getJitsiTracksForUser(userId) {
-    if (!this._jitsiConference) {
-      return null;
-    }
-
-    if (userId === game.user.id) {
-      return this._jitsiConference.getLocalTracks();
-    }
-
-    const jitsiId = this._usernameCache[userId];
-    if (jitsiId) {
-      try {
-        return this._jitsiConference.getParticipantById(jitsiId).getTracks();
-      } catch (err) {
-        log.error("_getJitsiTracksForUser error:", err);
-        return null;
-      }
-    }
-
-    return null;
-  }
-
-  /**
-   * Obtain a reference to the video.user-audio which plays the audio channel for a requested
-   * Foundry User.
-   * If the element doesn't exist, but a video element does, it will create it.
-   * @param {string} userId                   The ID of the User entity
-   * @param {HTMLVideoElement} videoElement   The HTMLVideoElement of the user
-   * @return {HTMLVideoElement|null}
-   */
-  _getUserAudioElement(userId, videoElement = null) {
-    // Find an existing audio element
-    let audioElement = ui.webrtc.element.find(`.camera-view[data-user=${userId}] audio.user-audio`)[0];
-
-    // If one doesn't exist, create it
-    if (!audioElement && videoElement) {
-      audioElement = document.createElement("audio");
-      audioElement.className = "user-audio";
-      audioElement.autoplay = true;
-      videoElement.after(audioElement);
-
-      // Bind volume control
-      ui.webrtc.element.find(`.camera-view[data-user=${userId}] .webrtc-volume-slider`).change(this._onVolumeChange.bind(this));
-    }
-
-    return audioElement;
-  }
-
-  /**
-   * Change volume control for a stream
-   * @param {Event} event   The originating change event from interaction with the range input
-   * @private
-   */
-  _onVolumeChange(event) {
-    const input = event.currentTarget;
-    const box = input.closest(".camera-view");
-    const volume = AudioHelper.inputToVolume(input.value);
-    box.getElementsByTagName("audio")[0].volume = volume;
-  }
-
-  _onRenderCameraViews(cameraViews, html) {
-    // Add the caption button if supported by the Jitsi server and ui.captions.caption is available
-    if (this.settings.get("world", "server").type === "custom"
-        && this._jitsiConnection?.options?.transcribingEnabled
-        && typeof ui.captions?.caption === "function") {
-      this._addCaptionButton(html);
-    }
-  }
-
-  _onCaptionButtonClicked(event) {
-    // Get current caption state
-    const captionsEnabled = !!this.settings.get("client", "captionsEnabled");
-
-    log.debug("Toggling captions to:", !captionsEnabled);
-
-    // Set the caption state
-    this.settings.set("client", "captionsEnabled", !captionsEnabled);
-    this._jitsiConference.setLocalParticipantProperty("requestingTranscription", !captionsEnabled);
-    event.target.classList.toggle("active", !captionsEnabled);
-  }
-
-  /**
-   * Mute all audio tracks
-   * @private
-   */
-  _muteAll() {
-    log.debug("Muting all users");
-
-    const muted = this.settings.get("client", "muteAll");
-
-    for (const userId of this.getConnectedUsers()) {
-      if (userId !== game.user.id) {
-        const audioElement = this._getUserAudioElement(userId);
-        if (audioElement) {
-          audioElement.muted = muted;
-        }
-      }
-    }
-  }
-
-  /**
-   * Handle transcription messages
-   * @param {Object} transcriptionMessage
-   */
-  _handleTranscription(transcriptionMessage) {
-    if (!this.settings.get("client", "captionsEnabled")) {
-      // Skip transcriptions if they aren't enabled
-      return;
-    }
-
-    log.debug("transcriptionMessage:", transcriptionMessage);
-    const participantId = transcriptionMessage.participant.id;
-    const transcriptionId = transcriptionMessage.message_id;
-    const fvttUser = game.users.get(this._idCache[participantId]);
-    const transcriptionText = transcriptionMessage.transcript[0].text;
-    ui.captions.caption(transcriptionId, fvttUser, transcriptionText);
-  }
-
-  /**
-   * Add caption button
-   * @param {Object} cameraViewsElement
-   */
-  _addCaptionButton(cameraViewsElement = ui.webrtc.element) {
-    const cameraBox = cameraViewsElement.find(`[data-user="${game.user.id}"]`);
-    const notificationElement = cameraBox.find(".notification-bar");
-
-    const captionButton = $('<a class="av-control toggle" title="Start subtitles" data-action="toggle-captions"><i class="fas fa-closed-captioning"></i></a>');
-    captionButton.on("click", (event) => game.webrtc.client._onCaptionButtonClicked(event));
-
-    // Set the button active state
-    const captionsEnabled = !!this.settings.get("client", "captionsEnabled");
-    captionButton.children("i")[0].classList.toggle("active", captionsEnabled);
-
-    notificationElement.prepend(captionButton);
-  }
-
-  /**
-   * Transform the device info array from jitsirtc into an object with {id: label} keys
-   * @param {Array} list    The list of devices
-   * @private
-   */
-  _deviceInfoToObject(list, kind) {
-    const obj = {};
-    for (let i = 0; i < list.length; i += 1) {
-      if (list[i].kind === kind) {
-        obj[list[i].deviceId] = list[i].label || game.i18n.localize("WEBRTC.UnknownDevice");
-      }
-    }
-
-    return obj;
-  }
-
-  /**
-   * Dynamically load additional script files, returning when loaded
-   * @param scriptSrc    The location of the script file
-   * @private
-   */
-  async _loadScript(scriptSrc) {
-    log.debug("Loading script:", scriptSrc);
-    return new Promise((resolve, reject) => {
-      // Skip loading script if it is already loaded
-      if ($(`script[src="${scriptSrc}"]`).length > 0) {
-        log.debug("Script already loaded:", scriptSrc);
-        resolve(true);
-        return;
-      }
-
-      const scriptElement = document.createElement("script");
-      $("head").append(scriptElement);
-
-      scriptElement.type = "text/javascript";
-      scriptElement.src = scriptSrc;
-      scriptElement.onload = () => {
-        log.debug("Loaded script", scriptSrc);
-        resolve(true);
-      };
-      scriptElement.onerror = (err) => {
-        log.error("Error loading script", scriptSrc);
-        reject(err);
-      };
-    });
-  }
-
-  _useCustomUrls(value) {
-    if (value) {
-      // Initially set to defaults
-      game.settings.set(MODULE_NAME, "domainUrl", this._server);
-      game.settings.set(MODULE_NAME, "mucUrl", `conference.${this._server}`);
-      game.settings.set(MODULE_NAME, "focusUrl", `focus.${this._server}`);
-      game.settings.set(MODULE_NAME, "boshUrl", `//${this._server}/http-bind`);
-      game.settings.set(MODULE_NAME, "websocketUrl", `wss://${this._server}/xmpp-websocket`);
-    } else {
-      // Clear values
-      game.settings.set(MODULE_NAME, "domainUrl", "");
-      game.settings.set(MODULE_NAME, "mucUrl", "");
-      game.settings.set(MODULE_NAME, "focusUrl", "");
-      game.settings.set(MODULE_NAME, "boshUrl", "");
-      game.settings.set(MODULE_NAME, "websocketUrl", "");
-    }
-
-    this._reload();
-  }
-
-  _setConfigValues() {
-    // Use custom server config if enabled
-    if (game.settings.get(MODULE_NAME, "customUrls")) {
-      // Create hosts config object if it doesn't exist
-      if (typeof (config.hosts) !== "object") {
-        config.hosts = {};
-      }
-      config.hosts.domain = game.settings.get(MODULE_NAME, "domainUrl");
-      config.hosts.muc = game.settings.get(MODULE_NAME, "mucUrl");
-      config.hosts.focus = game.settings.get(MODULE_NAME, "focusUrl");
-      config.bosh = game.settings.get(MODULE_NAME, "boshUrl");
-      config.websocket = game.settings.get(MODULE_NAME, "websocketUrl");
-    }
-
-    // Create p2p config object if it doesn't exist
-    if (typeof (config.p2p) !== "object") {
-      config.p2p = {};
-    }
-
-    // Disable P2P connections
-    config.enableP2P = false;
-    config.p2p.enabled = false;
-
-    // Disable audio detections for performance
-    config.enableNoAudioDetection = false;
-    config.enableNoisyMicDetection = false;
-
-    // Configure audio detection
-    config.disableAudioLevels = false;
-    config.audioLevelsInterval = 500;
-
-    // Configure settings for consistent video
-    config.channelLastN = -1;
-    config.adaptiveLastN = false;
-    delete config.lastNLimits;
-
-    // Disable auto-muted settings
-    delete config.startAudioMuted;
-    delete config.startVideoMuted;
-
-    // Remove callStats settings to avoid errors
-    delete config.callStatsID;
-    delete config.callStatsSecret;
-    delete config.callStatsCustomScriptUrl;
-  }
-
-  _sendJoinMessage() {
-    const roomId = this._breakoutRoom ?? this.settings.get("world", "server.room");
-
-    const url = `https://${this._server}/${roomId}#userInfo.displayName=%22${game.user.id}%22&config.prejoinPageEnabled=false`;
-
-    const joinDialog = new Dialog({
-      title: game.i18n.localize(`${LANG_NAME}.joinMessage`),
-      // content: `<p>${url}</p>`,
-      buttons: {
-        join: {
-          icon: '<i class="fas fa-check"></i>',
-          label: game.i18n.localize(`${LANG_NAME}.joinButton`),
-          callback: () => window.open(url),
-        },
-        ignore: {
-          icon: '<i class="fas fa-times"></i>',
-          label: game.i18n.localize(`${LANG_NAME}.ignoreButton`),
-          callback: () => (log.debug("Ignoring Jitsi Meet join request")),
-        },
-      },
-      default: "join",
-    });
-    joinDialog.render(true);
-  }
-
-  _fvttAudioEnabled() {
-    if ([AVSettings.AV_MODES.AUDIO_VIDEO, AVSettings.AV_MODES.AUDIO].includes(this.master.mode)) {
-      return true;
-    }
-    return false;
-  }
-
-  _fvttVideoEnabled() {
-    if ([AVSettings.AV_MODES.AUDIO_VIDEO, AVSettings.AV_MODES.VIDEO].includes(this.master.mode)) {
-      return true;
-    }
-    return false;
-  }
-
-  _breakout(breakoutRoom) {
-    if (breakoutRoom === this._breakoutRoom) {
-      // Already in this room, skip
-      return;
-    }
-
-    log.debug("Switching to breakout room:", breakoutRoom);
-    this._breakoutRoom = breakoutRoom;
-    this.connect();
-  }
-
-  _startBreakout(userId, breakoutRoom) {
-    if (!game.user.isGM) {
-      log.warn("Only a GM can start a breakout conference room");
-      return;
-    }
-
-    this.settings.set("client", `users.${userId}.jitsiBreakoutRoom`, breakoutRoom);
-    game.socket.emit(`module.${MODULE_NAME}`, {
-      action: "breakout",
-      userId,
-      breakoutRoom,
-    });
-  }
-
-  _endUserBreakout(userId) {
-    if (!game.user.isGM) {
-      log.warn("Only a GM can end a user's breakout conference");
-      return;
-    }
-
-    this.settings.set("client", `users.${userId}.jitsiBreakoutRoom`, "");
-    game.socket.emit(`module.${MODULE_NAME}`, {
-      action: "breakout",
-      userId,
-      breakoutRoom: null,
-    });
-  }
-
-  _endAllBreakouts() {
-    if (!game.user.isGM) {
-      log.warn("Only a GM can end all breakout conference rooms");
-      return;
-    }
-
-    game.socket.emit(`module.${MODULE_NAME}`, {
-      action: "breakout",
-      userId: null,
-      breakoutRoom: null,
-    });
-
-    if (this._breakoutRoom) {
-      this._breakout(null);
-    }
-  }
-
-  _isUserExternal(userId) {
-    return Object.values(this._externalUserIdCache).includes(userId);
   }
 }
