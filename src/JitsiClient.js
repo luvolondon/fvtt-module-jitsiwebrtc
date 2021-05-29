@@ -287,8 +287,11 @@ export default class JitsiClient {
     this.jitsiConference = this.jitsiConnection.initJitsiConference(this.room, config);
     log.debug("Conference joined:", this.jitsiConference);
 
-    // Set our jitsi username to our FVTT user ID
-    this.jitsiConference.setDisplayName(game.user.id);
+    // Set our jitsi display name to our FVTT user name
+    this.jitsiConference.setDisplayName(game.user.name);
+
+    // Set a jitsi property to our FVTT user ID
+    this.jitsiConference.setLocalParticipantProperty("fvttUserId", game.user.id);
 
     // Set the preferred resolution of video to send and receive
     this.jitsiConference.setSenderVideoConstraint(240);
@@ -559,7 +562,10 @@ export default class JitsiClient {
     resolve(false);
   }
 
-  onUserJoined(id, participant) {
+  async onUserJoined(id, participant) {
+    // Await getFeatures to ensure the user is fully joined and configured
+    await participant.getFeatures();
+
     let displayName = participant.getDisplayName();
 
     // Ignore the user if they are hidden (likely a Transcriber account)
@@ -569,15 +575,28 @@ export default class JitsiClient {
       return;
     }
 
+    // Attempt to get the FVTT User ID from the configured property
+    let fvttUserId = participant.getProperty("fvttUserId");
+
+    // If the fvttUserId property doesn't exist, attempt to parse an ID from the displayName
+    if (!fvttUserId && displayName) {
+      const reDisplayName = /^(?<displayName>.*) [(](?<fvttUserId>.*)[)]$/;
+      const displayNameMatch = displayName.match(reDisplayName);
+      if (displayNameMatch) {
+        displayName = displayNameMatch.groups.displayName;
+        fvttUserId = displayNameMatch.groups.fvttUserId;
+      }
+    }
+
     // Handle Jitsi users who join the meeting directly
-    if (!game.users.get(displayName)) {
+    if (!game.users.get(fvttUserId)) {
       // Save the Jitsi display name into an external users cache
       this.externalUserCache[id] = displayName || "Jitsi User";
 
       // Add the external user as a temporary user entity if external users are allowed
       if (game.settings.get(MODULE_NAME, "allowExternalUsers")) {
         // Set the stored user name equal to the ID created when adding the user
-        displayName = this.addExternalUserData(id);
+        fvttUserId = this.addExternalUserData(id);
       } else {
         // Kick the user and stop processing
         log.warn("Kicking unauthorized external user: ", displayName);
@@ -586,21 +605,21 @@ export default class JitsiClient {
       }
     }
 
-    const fvttUser = game.users.get(displayName);
+    const fvttUser = game.users.get(fvttUserId);
     if (!fvttUser.active) {
       // Force the user to be active. If they are signing in to Jitsi, they should be online.
-      log.warn("Joining user", displayName, "is not listed as active. Setting to active.");
+      log.warn("Joining user", fvttUserId, "is not listed as active. Setting to active.");
       fvttUser.active = true;
       ui.players.render();
     }
 
-    this.usernameCache[displayName] = id;
-    this.participantCache[displayName] = participant;
-    this.idCache[id] = displayName;
+    this.usernameCache[fvttUserId] = id;
+    this.participantCache[fvttUserId] = participant;
+    this.idCache[id] = fvttUserId;
 
     // Clear breakout room cache if user is joining the main conference
     if (!this.breakoutRoom) {
-      this.settings.set("client", `users.${displayName}.jitsiBreakoutRoom`, "");
+      this.settings.set("client", `users.${fvttUserId}.jitsiBreakoutRoom`, "");
     }
 
     // Select all participants so their video stays active
@@ -624,7 +643,7 @@ export default class JitsiClient {
       log.debug("setReceiverConstraints not supported by this Jitsi version; skipping");
     }
 
-    log.debug("User joined:", displayName);
+    log.debug("User joined:", fvttUserId);
 
     this.render();
   }
@@ -829,7 +848,11 @@ export default class JitsiClient {
   sendJoinMessage() {
     const roomId = this.breakoutRoom ?? this.settings.get("world", "server.room");
 
-    const url = `https://${this.server}/${roomId}#userInfo.displayName=%22${game.user.id}%22&config.prejoinPageEnabled=false`;
+    // Create a display name that includes the user name and user ID
+    const uriDisplayName = encodeURI(`"${game.user.name} (${game.user.id})"`);
+
+    // Create the url for full Jisti Meet users to join with
+    const url = `https://${this.server}/${roomId}#userInfo.displayName=${uriDisplayName}&config.prejoinPageEnabled=false`;
 
     const joinDialog = new Dialog({
       title: game.i18n.localize(`${LANG_NAME}.joinMessage`),
