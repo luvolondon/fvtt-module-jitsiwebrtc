@@ -822,10 +822,8 @@ export default class JitsiClient {
     delete config.startAudioMuted;
     delete config.startVideoMuted;
 
-    // Remove callStats settings to avoid errors
-    delete config.callStatsID;
-    delete config.callStatsSecret;
-    delete config.callStatsCustomScriptUrl;
+    // Set an application name in case statistics are enabled
+    config.applicationName = `FVTT-${game.data.version} ${MODULE_NAME}-${game.modules.get(MODULE_NAME).data.version}`;
   }
 
   sendJoinMessage() {
