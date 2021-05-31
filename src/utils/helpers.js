@@ -45,6 +45,7 @@ export function registerModuleSetting(settingsObject) {
     config: settingsObject.config,
     default: settingsObject.default,
     type: settingsObject.type,
+    range: settingsObject.range,
     onChange: settingsObject.onChange,
   });
 }

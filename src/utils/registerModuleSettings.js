@@ -102,4 +102,17 @@ export default function registerModuleSettings() {
     type: String,
     onChange: () => helpers.delayReload(),
   });
+
+  // Register debug logging setting
+  helpers.registerModuleSetting({
+    name: "debug",
+    scope: "world",
+    config: true,
+    default: false,
+    type: Boolean,
+    onChange: (value) => log.setDebug(value),
+  });
+
+  // Set the initial debug level
+  log.setDebug(game.settings.get(MODULE_NAME, "debug"));
 }

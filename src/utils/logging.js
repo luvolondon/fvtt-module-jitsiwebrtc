@@ -1,4 +1,4 @@
-import { LANG_NAME, LOG_PREFIX, MODULE_NAME } from "./constants.js";
+import { LOG_PREFIX, MODULE_NAME } from "./constants.js";
 
 /* -------------------------------------------- */
 /*  Logging Methods                             */
@@ -38,7 +38,7 @@ export const warn = console.warn.bind(console, LOG_PREFIX);
 export const error = console.error.bind(console, LOG_PREFIX);
 
 // Enable debug & info logs if debugging is enabled
-function setDebug(value) {
+export function setDebug(value) {
   if (value) {
     debug = console.debug.bind(console, LOG_PREFIX);
     info = console.info.bind(console, LOG_PREFIX);
@@ -49,17 +49,3 @@ function setDebug(value) {
 
   Hooks.callAll(`${MODULE_NAME}DebugSet`, value);
 }
-
-Hooks.once("init", () => {
-  game.settings.register(MODULE_NAME, "debug", {
-    name: `${LANG_NAME}.debug`,
-    hint: `${LANG_NAME}.debugHint`,
-    scope: "world",
-    config: true,
-    default: false,
-    type: Boolean,
-    onChange: (value) => setDebug(value),
-  });
-
-  setDebug(game.settings.get(MODULE_NAME, "debug"));
-});
