@@ -1,3 +1,16 @@
+# v0.6.0
+* Use manifest+ fields
+* Make awaits, loops, and logging more consistent
+* Add live captioning support using libCaptions
+* Fix _loadScript method to not load a script multiple times
+* Debounce the window reload on settings changes so settings are saved before reload on 0.8.x
+* Check the connection status sooner and return earlier if it has failed
+* Major refactor into ES Modules format to make code easier to maintain
+* Set an applicationName in the jitsi config to allow server owners to enable statistics
+* Switch to setting the FVTT user idea as a participant property instead of using the display name
+* Update README
+* Update supported FVTT version to v0.8.6
+
 # v0.5.5
 * Fix error on older Jitsi versions that don't have the setReceiverConstraints method
 
