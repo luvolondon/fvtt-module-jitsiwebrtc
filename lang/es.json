@@ -33,6 +33,8 @@
     "JITSIRTC.leaveAVBreakout": "Salir de A/V privada",
     "JITSIRTC.removeFromAVBreakout": "Quitar de A/V privada",
     "JITSIRTC.endAllAVBreakouts": "Finalizar A/V privadas",
+    "JITSIRTC.hiddenUserJoined": "El usuario oculto {displayName} se ha unido a la sala de A/V",
+    "JITSIRTC.hiddenUserLeft": "El usuario oculto {displayName} ha dejado la sala de A/V",
 
     "WEBRTC.FVTTSignalingServer": "Jitsi Meet Beta Público (beta.meet.jit.si)"
 }
