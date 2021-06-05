@@ -54,7 +54,7 @@ jobs:
           download: https://github.com/${{ github.repository }}/releases/download/${{ needs.check_version.outputs.module_current_version }}/${{ github.event.repository.name }}.zip
       - name: Package module
         run: |
-          zip -r ./${{ github.event.repository.name }}.zip lang/ scripts/ CHANGELOG.md module.json README.md
+          zip -r ./${{ github.event.repository.name }}.zip css/ lang/ src/ CHANGELOG.md module.json README.md
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
