@@ -1,9 +1,6 @@
-import {
-  DEFAULT_JITSI_SERVER,
-  MODULE_NAME,
-} from "./utils/constants.js";
+import { DEFAULT_JITSI_SERVER, MODULE_NAME } from "./utils/constants.js";
 
-import * as helpers from "./utils/helpers.js";
+import { deviceInfoToObject, loadScript } from "./utils/helpers.js";
 import * as log from "./utils/logging.js";
 
 import JitsiClient from "./JitsiClient.js";
@@ -47,8 +44,8 @@ export default class JitsiAVClient extends AVClient {
     }
 
     // Load lib-jitsi-meet and config values from the selected server
-    await helpers.loadScript(`https://${this._jitsiClient.server}/libs/lib-jitsi-meet.min.js`);
-    await helpers.loadScript(`https://${this._jitsiClient.server}/config.js`);
+    await loadScript(`https://${this._jitsiClient.server}/libs/lib-jitsi-meet.min.js`);
+    await loadScript(`https://${this._jitsiClient.server}/config.js`);
 
     // Set up default config values
     this._jitsiClient.setConfigValues();
@@ -171,7 +168,7 @@ export default class JitsiAVClient extends AVClient {
     return new Promise((resolve) => {
       try {
         JitsiMeetJS.mediaDevices.enumerateDevices((list) => {
-          resolve(this._jitsiClient.deviceInfoToObject(list, "audiooutput"));
+          resolve(deviceInfoToObject(list, "audiooutput"));
         });
       } catch (err) {
         log.error("getAudioSinks error:", err);
@@ -191,7 +188,7 @@ export default class JitsiAVClient extends AVClient {
     return new Promise((resolve) => {
       try {
         JitsiMeetJS.mediaDevices.enumerateDevices((list) => {
-          resolve(this._jitsiClient.deviceInfoToObject(list, "audioinput"));
+          resolve(deviceInfoToObject(list, "audioinput"));
         });
       } catch (err) {
         log.error("getAudioSources error:", err);
@@ -211,7 +208,7 @@ export default class JitsiAVClient extends AVClient {
     return new Promise((resolve) => {
       try {
         JitsiMeetJS.mediaDevices.enumerateDevices((list) => {
-          resolve(this._jitsiClient.deviceInfoToObject(list, "videoinput"));
+          resolve(deviceInfoToObject(list, "videoinput"));
         });
       } catch (err) {
         log.error("getVideoSources error:", err);

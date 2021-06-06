@@ -766,21 +766,6 @@ export default class JitsiClient {
     }
   }
 
-  /**
-   * Transform the device info array from jitsirtc into an object with {id: label} keys
-   * @param {Array} list    The list of devices
-   */
-  deviceInfoToObject(list, kind) {
-    const obj = {};
-    for (let i = 0; i < list.length; i += 1) {
-      if (list[i].kind === kind) {
-        obj[list[i].deviceId] = list[i].label || game.i18n.localize("WEBRTC.UnknownDevice");
-      }
-    }
-
-    return obj;
-  }
-
   useCustomUrls(value) {
     if (value) {
       // Initially set to defaults
