@@ -1,3 +1,9 @@
+# v0.6.1
+* Fix external links in README
+* Update registration of logging settings
+* Update Spanish translation (thanks to José E. Lozano!)
+* Move common function into helper file
+
 # v0.6.0
 * Use manifest+ fields
 * Make awaits, loops, and logging more consistent
