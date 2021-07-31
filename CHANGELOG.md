@@ -1,3 +1,6 @@
+# v0.6.2
+* Update supported FVTT version to v0.8.8
+
 # v0.6.1
 * Fix external links in README
 * Update registration of logging settings
