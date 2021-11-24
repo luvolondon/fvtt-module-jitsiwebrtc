@@ -20,7 +20,11 @@ export default function registerModuleSettings() {
     type: String,
     onChange: (value) => {
       if (value !== game.webrtc.client._jitsiClient.jitsiURL) {
-        game.settings.set(MODULE_NAME, "externalUsersUrl", game.webrtc.client._jitsiClient.jitsiURL);
+        game.settings.set(
+          MODULE_NAME,
+          "externalUsersUrl",
+          game.webrtc.client._jitsiClient.jitsiURL
+        );
       }
     },
   });

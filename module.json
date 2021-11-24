@@ -21,13 +21,9 @@
   "version": "0.6.2",
   "minimumCoreVersion": "0.7.2",
   "compatibleCoreVersion": "0.8.8",
-  "manifestPlusVersion": "1.1.0",
-  "esmodules": [
-    "src/jitsirtc.js"
-  ],
-  "styles": [
-    "css/jitsirtc.css"
-  ],
+  "manifestPlusVersion": "1.2.0",
+  "esmodules": ["src/jitsirtc.js"],
+  "styles": ["css/jitsirtc.css"],
   "dependencies": [
     {
       "name": "lib-captions",

@@ -26,13 +26,19 @@ Hooks.on("ready", () => {
 
 Hooks.on("renderCameraViews", (cameraViews, cameraViewsElement) => {
   if (game.webrtc?.client?._jitsiClient) {
-    game.webrtc.client._jitsiClient.onRenderCameraViews(cameraViews, cameraViewsElement);
+    game.webrtc.client._jitsiClient.onRenderCameraViews(
+      cameraViews,
+      cameraViewsElement
+    );
   }
 });
 
 Hooks.on("getUserContextOptions", async (playersElement, contextOptions) => {
   if (game.webrtc?.client?._jitsiClient) {
-    game.webrtc.client._jitsiClient.onGetUserContextOptions(playersElement, contextOptions);
+    game.webrtc.client._jitsiClient.onGetUserContextOptions(
+      playersElement,
+      contextOptions
+    );
   }
 });
 

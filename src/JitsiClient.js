@@ -1,7 +1,4 @@
-import {
-  LANG_NAME,
-  MODULE_NAME,
-} from "./utils/constants.js";
+import { LANG_NAME, MODULE_NAME } from "./utils/constants.js";
 
 import * as helpers from "./utils/helpers.js";
 import * as log from "./utils/logging.js";
@@ -45,7 +42,7 @@ export default class JitsiClient {
   /**
    * Connect to the WebRTC server and configure ICE/TURN servers
    * @return {Promise}
-  */
+   */
   async connectServer(connectionSettings) {
     let auth = {};
 
@@ -75,26 +72,30 @@ export default class JitsiClient {
       config.bosh += `?room=${this.room}`;
       config.websocket += `?room=${this.room}`;
 
-      this.jitsiConnection = new JitsiMeetJS.JitsiConnection(null, null, config);
+      this.jitsiConnection = new JitsiMeetJS.JitsiConnection(
+        null,
+        null,
+        config
+      );
 
       log.debug("Connection created with options:", config);
 
       this.loginSuccessHandler = this.loginSuccess.bind(this, resolve);
       this.jitsiConnection.addEventListener(
         JitsiMeetJS.events.connection.CONNECTION_ESTABLISHED,
-        this.loginSuccessHandler,
+        this.loginSuccessHandler
       );
 
       this.loginFailureHandler = this.loginFailure.bind(this, resolve);
       this.jitsiConnection.addEventListener(
         JitsiMeetJS.events.connection.CONNECTION_FAILED,
-        this.loginFailureHandler,
+        this.loginFailureHandler
       );
 
       this.onDisconnectHandler = this.onDisconnect.bind(this);
       this.jitsiConnection.addEventListener(
         JitsiMeetJS.events.connection.CONNECTION_DISCONNECTED,
-        this.onDisconnectHandler,
+        this.onDisconnectHandler
       );
 
       // Set Jitsi URL
@@ -116,10 +117,10 @@ export default class JitsiClient {
     await this.closeLocalTracks();
 
     // Check for requested/allowed audio/video
-    const audioRequested = audioSrc
-      && this.avMaster.canUserBroadcastAudio(game.user.id);
-    const videoRequested = videoSrc
-      && this.avMaster.canUserBroadcastVideo(game.user.id);
+    const audioRequested =
+      audioSrc && this.avMaster.canUserBroadcastAudio(game.user.id);
+    const videoRequested =
+      videoSrc && this.avMaster.canUserBroadcastVideo(game.user.id);
 
     const devlist = [];
     let localTracks = [];
@@ -145,11 +146,15 @@ export default class JitsiClient {
         if (localTracks) {
           // We successfully started audio or video
           log.warn(game.i18n.localize(`WEBRTC.CaptureWarning${capturedOnly}`));
-          ui.notifications.warn(game.i18n.localize(`WEBRTC.CaptureWarning${capturedOnly}`));
+          ui.notifications.warn(
+            game.i18n.localize(`WEBRTC.CaptureWarning${capturedOnly}`)
+          );
         } else {
           // Nothing worked, return false
           log.warn(game.i18n.localize("WEBRTC.CaptureErrorAudioVideo"));
-          ui.notifications.warn(game.i18n.localize("WEBRTC.CaptureErrorAudioVideo"));
+          ui.notifications.warn(
+            game.i18n.localize("WEBRTC.CaptureErrorAudioVideo")
+          );
           return false;
         }
       }
@@ -199,7 +204,9 @@ export default class JitsiClient {
    */
   async addLocalTracks(localTracks) {
     if (!this.jitsiConference) {
-      log.warn("Attempted to add local tracks with no active Jitsi Conference; skipping");
+      log.warn(
+        "Attempted to add local tracks with no active Jitsi Conference; skipping"
+      );
       return;
     }
 
@@ -209,9 +216,15 @@ export default class JitsiClient {
       const trackType = localTrack.getType();
 
       // Determine if the user is allowed to add this track type
-      if (trackType === "audio" && this.avMaster.canUserBroadcastAudio(game.user.id)) {
+      if (
+        trackType === "audio" &&
+        this.avMaster.canUserBroadcastAudio(game.user.id)
+      ) {
         trackAllowed = true;
-      } else if (trackType === "video" && this.avMaster.canUserBroadcastVideo(game.user.id)) {
+      } else if (
+        trackType === "video" &&
+        this.avMaster.canUserBroadcastVideo(game.user.id)
+      ) {
         trackAllowed = true;
       }
 
@@ -228,12 +241,13 @@ export default class JitsiClient {
     }
 
     // Check that mute/hidden/broadcast are toggled properly
-    const voiceModeAlways = this.settings.get("client", "voice.mode") === "always";
+    const voiceModeAlways =
+      this.settings.get("client", "voice.mode") === "always";
     await this.jitsiAvClient.toggleAudio(
-      voiceModeAlways && this.avMaster.canUserShareAudio(game.user.id),
+      voiceModeAlways && this.avMaster.canUserShareAudio(game.user.id)
     );
     await this.jitsiAvClient.toggleVideo(
-      this.avMaster.canUserShareVideo(game.user.id),
+      this.avMaster.canUserShareVideo(game.user.id)
     );
     this.avMaster.broadcast(voiceModeAlways);
   }
@@ -243,7 +257,9 @@ export default class JitsiClient {
    */
   async closeLocalTracks(trackType = null) {
     if (!this.jitsiConference) {
-      log.debug("Attempted to close local tracks with no active Jitsi Conference; skipping");
+      log.debug(
+        "Attempted to close local tracks with no active Jitsi Conference; skipping"
+      );
       return;
     }
 
@@ -284,14 +300,20 @@ export default class JitsiClient {
    */
   loginSuccess(resolve) {
     // Set up room handle
-    this.jitsiConference = this.jitsiConnection.initJitsiConference(this.room, config);
+    this.jitsiConference = this.jitsiConnection.initJitsiConference(
+      this.room,
+      config
+    );
     log.debug("Conference joined:", this.jitsiConference);
 
     // Set our jitsi display name to our FVTT user name
     this.jitsiConference.setDisplayName(game.user.name);
 
     // Set a jitsi property to our FVTT user ID
-    this.jitsiConference.setLocalParticipantProperty("fvttUserId", game.user.id);
+    this.jitsiConference.setLocalParticipantProperty(
+      "fvttUserId",
+      game.user.id
+    );
 
     // Set the preferred resolution of video to send and receive
     this.jitsiConference.setSenderVideoConstraint(240);
@@ -300,55 +322,55 @@ export default class JitsiClient {
     // Set up jitsi event handles
     this.jitsiConference.on(
       JitsiMeetJS.events.conference.CONFERENCE_JOINED,
-      this.onConferenceJoined.bind(this, resolve),
+      this.onConferenceJoined.bind(this, resolve)
     );
     this.jitsiConference.on(
       JitsiMeetJS.events.conference.CONFERENCE_ERROR,
-      this.onConferenceError.bind(this, resolve),
+      this.onConferenceError.bind(this, resolve)
     );
     this.jitsiConference.on(
       JitsiMeetJS.events.conference.ENDPOINT_MESSAGE_RECEIVED,
-      this.onEndpointMessageReceived.bind(this),
+      this.onEndpointMessageReceived.bind(this)
     );
     this.jitsiConference.on(
       JitsiMeetJS.events.conference.MESSAGE_RECEIVED,
-      this.onMessageReceived.bind(this),
+      this.onMessageReceived.bind(this)
     );
     this.jitsiConference.on(
       JitsiMeetJS.events.conference.CONNECTION_INTERRUPTED,
-      this.onConnectionInterrupted.bind(this),
+      this.onConnectionInterrupted.bind(this)
     );
     this.jitsiConference.on(
       JitsiMeetJS.events.conference.PARTICIPANT_CONN_STATUS_CHANGED,
-      this.onParticipantConnStatusChanged.bind(this),
+      this.onParticipantConnStatusChanged.bind(this)
     );
     this.jitsiConference.on(
       JitsiMeetJS.events.conference.SUSPEND_DETECTED,
-      this.onSuspendDetected.bind(this),
+      this.onSuspendDetected.bind(this)
     );
     this.jitsiConference.on(
       JitsiMeetJS.events.conference.TRACK_ADDED,
-      this.onRemoteTrackAdded.bind(this),
+      this.onRemoteTrackAdded.bind(this)
     );
     this.jitsiConference.on(
       JitsiMeetJS.events.conference.TRACK_REMOVED,
-      this.onRemoteTrackRemove.bind(this),
+      this.onRemoteTrackRemove.bind(this)
     );
     this.jitsiConference.on(
       JitsiMeetJS.events.conference.TRACK_AUDIO_LEVEL_CHANGED,
-      this.onTrackAudioLevelChanged.bind(this),
+      this.onTrackAudioLevelChanged.bind(this)
     );
     this.jitsiConference.on(
       JitsiMeetJS.events.conference.TRACK_MUTE_CHANGED,
-      this.onTrackMuteChanged.bind(this),
+      this.onTrackMuteChanged.bind(this)
     );
     this.jitsiConference.on(
       JitsiMeetJS.events.conference.USER_JOINED,
-      this.onUserJoined.bind(this),
+      this.onUserJoined.bind(this)
     );
     this.jitsiConference.on(
       JitsiMeetJS.events.conference.USER_LEFT,
-      this.onUserLeft.bind(this),
+      this.onUserLeft.bind(this)
     );
 
     // Join the room
@@ -401,7 +423,12 @@ export default class JitsiClient {
         JitsiCaptions.handleTranscription(endpointMessage, this);
         break;
       default:
-        log.debug("Unknown endpoint message received from", endpointId.getDisplayName(), ":", endpointMessage);
+        log.debug(
+          "Unknown endpoint message received from",
+          endpointId.getDisplayName(),
+          ":",
+          endpointMessage
+        );
     }
   }
 
@@ -422,7 +449,14 @@ export default class JitsiClient {
    */
   onParticipantConnStatusChanged(endpointId, newStatus) {
     const userId = this.idCache[endpointId];
-    log.warn("Status changed for participant", endpointId, "(", userId, "):", newStatus);
+    log.warn(
+      "Status changed for participant",
+      endpointId,
+      "(",
+      userId,
+      "):",
+      newStatus
+    );
   }
 
   /**
@@ -452,7 +486,15 @@ export default class JitsiClient {
     }
 
     const userId = this.idCache[participantId];
-    log.debug("Remote track type", jitsiTrack.getType(), "added for participant", participant, "(", userId, ")");
+    log.debug(
+      "Remote track type",
+      jitsiTrack.getType(),
+      "added for participant",
+      participant,
+      "(",
+      userId,
+      ")"
+    );
 
     // Call a debounced render
     this.render();
@@ -470,7 +512,15 @@ export default class JitsiClient {
 
     const participant = jitsiTrack.getParticipantId();
     const userId = this.idCache[participant];
-    log.debug("Remote track type", jitsiTrack.getType(), "removed for participant", participant, "(", userId, ")");
+    log.debug(
+      "Remote track type",
+      jitsiTrack.getType(),
+      "removed for participant",
+      participant,
+      "(",
+      userId,
+      ")"
+    );
 
     // Call a debounced render
     this.render();
@@ -508,7 +558,14 @@ export default class JitsiClient {
     }
 
     const isMuted = jitsiTrack.isMuted();
-    log.debug("Mute changed to", isMuted, "for", jitsiTrack.getType(), "for participant", participant);
+    log.debug(
+      "Mute changed to",
+      isMuted,
+      "for",
+      jitsiTrack.getType(),
+      "for participant",
+      participant
+    );
 
     if (jitsiTrack.getType() === "video") {
       this.render();
@@ -550,8 +607,14 @@ export default class JitsiClient {
     log.debug("Conference joined event.");
 
     // Enabled transcription if it is requested and ui.captions.caption is available
-    if (this.settings.get("client", "captionsEnabled") && typeof ui.captions?.caption === "function") {
-      this.jitsiConference.setLocalParticipantProperty("requestingTranscription", true);
+    if (
+      this.settings.get("client", "captionsEnabled") &&
+      typeof ui.captions?.caption === "function"
+    ) {
+      this.jitsiConference.setLocalParticipantProperty(
+        "requestingTranscription",
+        true
+      );
     }
 
     resolve(true);
@@ -571,7 +634,9 @@ export default class JitsiClient {
     // Ignore the user if they are hidden (likely a Transcriber account)
     if (participant?.isHidden()) {
       log.info("Not showing hidden user:", participant);
-      ui.notifications.info(game.i18n.format(`${LANG_NAME}.hiddenUserJoined`, { displayName }));
+      ui.notifications.info(
+        game.i18n.format(`${LANG_NAME}.hiddenUserJoined`, { displayName })
+      );
       return;
     }
 
@@ -608,7 +673,11 @@ export default class JitsiClient {
     const fvttUser = game.users.get(fvttUserId);
     if (!fvttUser.active) {
       // Force the user to be active. If they are signing in to Jitsi, they should be online.
-      log.warn("Joining user", fvttUserId, "is not listed as active. Setting to active.");
+      log.warn(
+        "Joining user",
+        fvttUserId,
+        "is not listed as active. Setting to active."
+      );
       fvttUser.active = true;
       ui.players.render();
     }
@@ -629,7 +698,7 @@ export default class JitsiClient {
      * We also need to set the default constraints to avoid them getting set back to jitsi defaults.
      * Uses the new format described here:
      * https://github.com/jitsi/jitsi-videobridge/blob/master/doc/allocation.md
-    */
+     */
     try {
       this.jitsiConference.setReceiverConstraints({
         lastN: -1,
@@ -640,7 +709,9 @@ export default class JitsiClient {
         },
       });
     } catch (err) {
-      log.debug("setReceiverConstraints not supported by this Jitsi version; skipping");
+      log.debug(
+        "setReceiverConstraints not supported by this Jitsi version; skipping"
+      );
     }
 
     log.debug("User joined:", fvttUserId);
@@ -654,7 +725,9 @@ export default class JitsiClient {
     // Ignore the user if they are hidden (likely a Transcriber account)
     if (participant?.isHidden()) {
       log.debug("No need to remove hidden user:", participant);
-      ui.notifications.info(game.i18n.format(`${LANG_NAME}.hiddenUserLeft`, { displayName }));
+      ui.notifications.info(
+        game.i18n.format(`${LANG_NAME}.hiddenUserLeft`, { displayName })
+      );
       return;
     }
 
@@ -662,10 +735,14 @@ export default class JitsiClient {
 
     // Clear breakout room cache if user is leaving a breakout room
     if (
-      this.settings.getUser(this.idCache[id]).jitsiBreakoutRoom === this.room
-      && this.room === this.breakoutRoom
+      this.settings.getUser(this.idCache[id]).jitsiBreakoutRoom === this.room &&
+      this.room === this.breakoutRoom
     ) {
-      this.settings.set("client", `users.${this.idCache[id]}.jitsiBreakoutRoom`, "");
+      this.settings.set(
+        "client",
+        `users.${this.idCache[id]}.jitsiBreakoutRoom`,
+        ""
+      );
     }
 
     delete this.usernameCache[this.idCache[id]];
@@ -692,7 +769,9 @@ export default class JitsiClient {
    */
   getUserAudioElement(userId, videoElement = null) {
     // Find an existing audio element
-    let audioElement = ui.webrtc.element.find(`.camera-view[data-user=${userId}] audio.user-audio`)[0];
+    let audioElement = ui.webrtc.element.find(
+      `.camera-view[data-user=${userId}] audio.user-audio`
+    )[0];
 
     // If one doesn't exist, create it
     if (!audioElement && videoElement) {
@@ -702,7 +781,9 @@ export default class JitsiClient {
       videoElement.after(audioElement);
 
       // Bind volume control
-      ui.webrtc.element.find(`.camera-view[data-user=${userId}] .webrtc-volume-slider`).change(this.onVolumeChange.bind(this));
+      ui.webrtc.element
+        .find(`.camera-view[data-user=${userId}] .webrtc-volume-slider`)
+        .change(this.onVolumeChange.bind(this));
     }
 
     return audioElement;
@@ -721,9 +802,11 @@ export default class JitsiClient {
 
   onRenderCameraViews(cameraViews, cameraViewsElement) {
     // Add the caption button if supported by the Jitsi server and ui.captions.caption is available
-    if (this.settings.get("world", "server").type === "custom"
-        && this.jitsiConnection?.options?.transcribingEnabled
-        && typeof ui.captions?.caption === "function") {
+    if (
+      this.settings.get("world", "server").type === "custom" &&
+      this.jitsiConnection?.options?.transcribingEnabled &&
+      typeof ui.captions?.caption === "function"
+    ) {
       JitsiCaptions.addCaptionButton(cameraViewsElement, this);
     }
   }
@@ -733,7 +816,10 @@ export default class JitsiClient {
     switch (request.action) {
       case "breakout":
         // Allow only GMs to issue breakout requests. Ignore requests that aren't for us.
-        if (game.users.get(userId).isGM && (!request.userId || request.userId === game.user.id)) {
+        if (
+          game.users.get(userId).isGM &&
+          (!request.userId || request.userId === game.user.id)
+        ) {
           JitsiBreakout.breakout(request.breakoutRoom, this);
         }
         break;
@@ -773,7 +859,11 @@ export default class JitsiClient {
       game.settings.set(MODULE_NAME, "mucUrl", `conference.${this.server}`);
       game.settings.set(MODULE_NAME, "focusUrl", `focus.${this.server}`);
       game.settings.set(MODULE_NAME, "boshUrl", `//${this.server}/http-bind`);
-      game.settings.set(MODULE_NAME, "websocketUrl", `wss://${this.server}/xmpp-websocket`);
+      game.settings.set(
+        MODULE_NAME,
+        "websocketUrl",
+        `wss://${this.server}/xmpp-websocket`
+      );
     } else {
       // Clear values
       game.settings.set(MODULE_NAME, "domainUrl", "");
@@ -790,7 +880,7 @@ export default class JitsiClient {
     // Use custom server config if enabled
     if (game.settings.get(MODULE_NAME, "customUrls")) {
       // Create hosts config object if it doesn't exist
-      if (typeof (config.hosts) !== "object") {
+      if (typeof config.hosts !== "object") {
         config.hosts = {};
       }
       config.hosts.domain = game.settings.get(MODULE_NAME, "domainUrl");
@@ -801,7 +891,7 @@ export default class JitsiClient {
     }
 
     // Create p2p config object if it doesn't exist
-    if (typeof (config.p2p) !== "object") {
+    if (typeof config.p2p !== "object") {
       config.p2p = {};
     }
 
@@ -827,11 +917,14 @@ export default class JitsiClient {
     delete config.startVideoMuted;
 
     // Set an application name in case statistics are enabled
-    config.applicationName = `FVTT-${game.data.version} ${MODULE_NAME}-${game.modules.get(MODULE_NAME).data.version}`;
+    config.applicationName = `FVTT-${game.data.version} ${MODULE_NAME}-${
+      game.modules.get(MODULE_NAME).data.version
+    }`;
   }
 
   sendJoinMessage() {
-    const roomId = this.breakoutRoom ?? this.settings.get("world", "server.room");
+    const roomId =
+      this.breakoutRoom ?? this.settings.get("world", "server.room");
 
     // Create a display name that includes the user name and user ID
     const uriDisplayName = encodeURI(`"${game.user.name} (${game.user.id})"`);
@@ -851,7 +944,7 @@ export default class JitsiClient {
         ignore: {
           icon: '<i class="fas fa-times"></i>',
           label: game.i18n.localize(`${LANG_NAME}.ignoreButton`),
-          callback: () => (log.debug("Ignoring Jitsi Meet join request")),
+          callback: () => log.debug("Ignoring Jitsi Meet join request"),
         },
       },
       default: "join",
@@ -860,18 +953,22 @@ export default class JitsiClient {
   }
 
   fvttAudioEnabled() {
-    if ([AVSettings.AV_MODES.AUDIO_VIDEO, AVSettings.AV_MODES.AUDIO].includes(
-      this.avMaster.mode,
-    )) {
+    if (
+      [AVSettings.AV_MODES.AUDIO_VIDEO, AVSettings.AV_MODES.AUDIO].includes(
+        this.avMaster.mode
+      )
+    ) {
       return true;
     }
     return false;
   }
 
   fvttVideoEnabled() {
-    if ([AVSettings.AV_MODES.AUDIO_VIDEO, AVSettings.AV_MODES.VIDEO].includes(
-      this.avMaster.mode,
-    )) {
+    if (
+      [AVSettings.AV_MODES.AUDIO_VIDEO, AVSettings.AV_MODES.VIDEO].includes(
+        this.avMaster.mode
+      )
+    ) {
       return true;
     }
     return false;
