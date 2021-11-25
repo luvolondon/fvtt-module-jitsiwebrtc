@@ -1,3 +1,7 @@
+# v0.6.3
+
+- Update to support FVTT version 9.231
+
 # v0.6.2
 
 - Update supported FVTT version to v0.8.8
