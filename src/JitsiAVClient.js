@@ -3,6 +3,7 @@ import { DEFAULT_JITSI_SERVER, MODULE_NAME } from "./utils/constants.js";
 import { deviceInfoToObject, loadScript } from "./utils/helpers.js";
 import * as log from "./utils/logging.js";
 
+import JitsiAVConfig from "./JitsiAVConfig.js";
 import JitsiClient from "./JitsiClient.js";
 
 /**
@@ -16,6 +17,7 @@ export default class JitsiAVClient extends AVClient {
     super(master, settings);
 
     this._jitsiClient = new JitsiClient(this);
+    this.master.config = new JitsiAVConfig(master);
   }
 
   /* -------------------------------------------- */
@@ -252,11 +254,23 @@ export default class JitsiAVClient extends AVClient {
   /* -------------------------------------------- */
 
   /**
+   * Provide a MediaStream for monitoring a given user's voice volume levels.
+   * @param {string} userId       The User ID.
+   * @returns {MediaStream|null}  The MediaStream for the user, or null if the user does not have one.
+   */
+  getLevelsStreamForUser() {
+    log.debug("getLevelsStreamForUser called but is not used with JitsiRTC");
+    return null;
+  }
+
+  /* -------------------------------------------- */
+
+  /**
    * Is outbound audio enabled for the current user?
    * @return {boolean}
    */
   isAudioEnabled() {
-    return this._jitsiClient.localAudioEnabled;
+    return !!this._jitsiClient.jitsiConference?.getLocalAudioTrack();
   }
 
   /* -------------------------------------------- */
@@ -266,7 +280,7 @@ export default class JitsiAVClient extends AVClient {
    * @return {boolean}
    */
   isVideoEnabled() {
-    return this._jitsiClient.localVideoEnabled;
+    return !!this._jitsiClient.jitsiConference?.getLocalVideoTrack();
   }
 
   /* -------------------------------------------- */
@@ -351,6 +365,7 @@ export default class JitsiAVClient extends AVClient {
       } else {
         await localVideoTrack.mute();
       }
+      this.master.render();
     }
   }
 
@@ -434,6 +449,18 @@ export default class JitsiAVClient extends AVClient {
     log.debug("onSettingsChanged:", changed);
     const keys = Object.keys(flattenObject(changed));
 
+    // Change in the server configuration; reconnect
+    const serverChange = [
+      "world.server.type",
+      "world.server.url",
+      "world.server.username",
+      "world.server.password",
+      "world.server.room",
+    ].some((k) => keys.includes(k));
+    if (serverChange) {
+      this.master.connect();
+    }
+
     // Change audio or video sources
     if (
       keys.some((k) => ["client.videoSrc", "client.audioSrc"].includes(k)) ||
@@ -457,5 +484,15 @@ export default class JitsiAVClient extends AVClient {
     if (keys.some((k) => ["client.muteAll"].includes(k))) {
       this._jitsiClient.muteAll();
     }
+  }
+
+  /**
+   * Replace the local stream for each connected peer with a re-generated MediaStream
+   * @returns {Promise<Array>} (Really returns {Promise<void>})
+   */
+  async updateLocalStream() {
+    log.debug("updateLocalStream");
+    // This is a bit of a hack, but we are just going to reconnect
+    this.master.connect();
   }
 }

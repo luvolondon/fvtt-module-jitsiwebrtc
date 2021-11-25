@@ -32,6 +32,12 @@ export default class JitsiClient {
     this.useJitsiMeet = false;
     this.jitsiURL = null;
 
+    // Is the FVTT server version 9. TODO: Remove if we drop support for lower versions
+    this.isVersion9 = isNewerVersion(
+      game.version || game.data.version,
+      "9.224"
+    );
+
     this.render = debounce(this.avMaster.render.bind(this.jitsiAvClient), 2000);
   }
 
@@ -221,11 +227,13 @@ export default class JitsiClient {
         this.avMaster.canUserBroadcastAudio(game.user.id)
       ) {
         trackAllowed = true;
+        game.user?.broadcastActivity({ av: { muted: false } });
       } else if (
         trackType === "video" &&
         this.avMaster.canUserBroadcastVideo(game.user.id)
       ) {
         trackAllowed = true;
+        game.user?.broadcastActivity({ av: { hidden: false } });
       }
 
       // Add track if allowed

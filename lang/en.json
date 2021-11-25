@@ -33,5 +33,10 @@
   "JITSIRTC.hiddenUserJoined": "Hidden user {displayName} has joined the A/V conference",
   "JITSIRTC.hiddenUserLeft": "Hidden user {displayName} has left the A/V conference",
 
-  "WEBRTC.FVTTSignalingServer": "Public Jitsi Meet Beta (beta.meet.jit.si)"
+  "WEBRTC.CustomSignalingServer": "Custom Server",
+  "WEBRTC.FVTTSignalingServer": "Public Jitsi Meet Beta (beta.meet.jit.si)",
+  "WEBRTC.WebRTCServer": "Choose Jitsi Server",
+  "WEBRTC.WebRTCServerURL": "Jitsi Server Address",
+  "WEBRTC.WebRTCServerUsername": "Jitsi Server Username",
+  "WEBRTC.WebRTCServerPassword": "LiveKit Server Password"
 }

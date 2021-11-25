@@ -1,4 +1,5 @@
 import { MODULE_NAME } from "./constants.js";
+import JitsiAVConfig from "../JitsiAVConfig.js";
 import registerModuleSettings from "./registerModuleSettings.js";
 
 /* -------------------------------------------- */
@@ -21,6 +22,17 @@ Hooks.on("ready", () => {
     if (game.webrtc?.client?._jitsiClient) {
       game.webrtc.client._jitsiClient.onSocketEvent(request, userId);
     }
+  });
+
+  // Override the default settings menu with our own
+  // WebRTC Control Menu
+  game.settings.registerMenu("core", "webrtc", {
+    name: "WEBRTC.Title",
+    label: "WEBRTC.MenuLabel",
+    hint: "WEBRTC.MenuHint",
+    icon: "fas fa-headset",
+    type: JitsiAVConfig,
+    restricted: false,
   });
 });
 
