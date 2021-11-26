@@ -1,3 +1,8 @@
+# v0.6.4
+
+- Fix a missing file during the github build process that preventing the A/V settings page from
+  opening
+
 # v0.6.3
 
 - Update to support FVTT version 9.231
