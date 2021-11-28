@@ -1,11 +1,9 @@
-import {
-  DEFAULT_JITSI_SERVER,
-  MODULE_NAME,
-} from "./utils/constants.js";
+import { DEFAULT_JITSI_SERVER, MODULE_NAME } from "./utils/constants.js";
 
-import * as helpers from "./utils/helpers.js";
+import { deviceInfoToObject, loadScript } from "./utils/helpers.js";
 import * as log from "./utils/logging.js";
 
+import JitsiAVConfig from "./JitsiAVConfig.js";
 import JitsiClient from "./JitsiClient.js";
 
 /**
@@ -19,6 +17,7 @@ export default class JitsiAVClient extends AVClient {
     super(master, settings);
 
     this._jitsiClient = new JitsiClient(this);
+    this.master.config = new JitsiAVConfig(master);
   }
 
   /* -------------------------------------------- */
@@ -26,10 +25,10 @@ export default class JitsiAVClient extends AVClient {
   /* -------------------------------------------- */
 
   /**
-     * One-time initialization actions that should be performed for this client implementation.
-     * This will be called only once when the Game object is first set-up.
-     * @return {Promise<void>}
-     */
+   * One-time initialization actions that should be performed for this client implementation.
+   * This will be called only once when the Game object is first set-up.
+   * @return {Promise<void>}
+   */
   async initialize() {
     log.debug("JitsiAVClient initialize");
     if (this.settings.get("world", "server").type === "custom") {
@@ -47,14 +46,18 @@ export default class JitsiAVClient extends AVClient {
     }
 
     // Load lib-jitsi-meet and config values from the selected server
-    await helpers.loadScript(`https://${this._jitsiClient.server}/libs/lib-jitsi-meet.min.js`);
-    await helpers.loadScript(`https://${this._jitsiClient.server}/config.js`);
+    await loadScript(
+      `https://${this._jitsiClient.server}/libs/lib-jitsi-meet.min.js`
+    );
+    await loadScript(`https://${this._jitsiClient.server}/config.js`);
 
     // Set up default config values
     this._jitsiClient.setConfigValues();
 
     if (this.settings.get("client", "voice.mode") === "activity") {
-      log.debug("Disabling voice activation mode as it is handled natively by Jitsi");
+      log.debug(
+        "Disabling voice activation mode as it is handled natively by Jitsi"
+      );
       this.settings.set("client", "voice.mode", "always");
     }
 
@@ -72,12 +75,12 @@ export default class JitsiAVClient extends AVClient {
   /* -------------------------------------------- */
 
   /**
-     * Connect to any servers or services needed in order to provide audio/video functionality.
-     * Any parameters needed in order to establish the connection should be drawn from the settings
-     * object.
-     * This function should return a boolean for whether the connection attempt was successful.
-     * @return {Promise<boolean>}   Was the connection attempt successful?
-     */
+   * Connect to any servers or services needed in order to provide audio/video functionality.
+   * Any parameters needed in order to establish the connection should be drawn from the settings
+   * object.
+   * This function should return a boolean for whether the connection attempt was successful.
+   * @return {Promise<boolean>}   Was the connection attempt successful?
+   */
   async connect() {
     log.debug("JitsiAVClient connect");
 
@@ -94,7 +97,9 @@ export default class JitsiAVClient extends AVClient {
     this._jitsiClient.active = true;
 
     // Attempt to connect to the server
-    const serverConnected = await this._jitsiClient.connectServer(this.settings.get("world", "server"));
+    const serverConnected = await this._jitsiClient.connectServer(
+      this.settings.get("world", "server")
+    );
     if (!serverConnected) {
       log.error("Server connection failed");
       return false;
@@ -111,10 +116,10 @@ export default class JitsiAVClient extends AVClient {
   /* -------------------------------------------- */
 
   /**
-     * Disconnect from any servers or services which are used to provide audio/video functionality.
-     * This function should return a boolean for whether a valid disconnection occurred.
-     * @return {Promise<boolean>}   Did a disconnection occur?
-     */
+   * Disconnect from any servers or services which are used to provide audio/video functionality.
+   * This function should return a boolean for whether a valid disconnection occurred.
+   * @return {Promise<boolean>}   Did a disconnection occur?
+   */
   async disconnect() {
     log.debug("JitsiAVClient disconnect");
     let disconnected = false;
@@ -141,15 +146,15 @@ export default class JitsiAVClient extends AVClient {
       disconnected = true;
       this._jitsiClient.jitsiConnection.removeEventListener(
         JitsiMeetJS.events.connection.CONNECTION_ESTABLISHED,
-        this._jitsiClient.loginSuccessHandler,
+        this._jitsiClient.loginSuccessHandler
       );
       this._jitsiClient.jitsiConnection.removeEventListener(
         JitsiMeetJS.events.connection.CONNECTION_FAILED,
-        this._jitsiClient.loginFailureHandler,
+        this._jitsiClient.loginFailureHandler
       );
       this._jitsiClient.jitsiConnection.removeEventListener(
         JitsiMeetJS.events.connection.CONNECTION_DISCONNECTED,
-        this._jitsiClient.onDisconnectHandler,
+        this._jitsiClient.onDisconnectHandler
       );
 
       await this._jitsiClient.jitsiConnection.disconnect();
@@ -163,15 +168,15 @@ export default class JitsiAVClient extends AVClient {
   /* -------------------------------------------- */
 
   /**
-     * Provide an Object of available audio sources which can be used by this implementation.
-     * Each object key should be a device id and the key should be a human-readable label.
-     * @return {Promise<{string: string}>}
-     */
+   * Provide an Object of available audio sources which can be used by this implementation.
+   * Each object key should be a device id and the key should be a human-readable label.
+   * @return {Promise<{string: string}>}
+   */
   async getAudioSinks() {
     return new Promise((resolve) => {
       try {
         JitsiMeetJS.mediaDevices.enumerateDevices((list) => {
-          resolve(this._jitsiClient.deviceInfoToObject(list, "audiooutput"));
+          resolve(deviceInfoToObject(list, "audiooutput"));
         });
       } catch (err) {
         log.error("getAudioSinks error:", err);
@@ -183,15 +188,15 @@ export default class JitsiAVClient extends AVClient {
   /* -------------------------------------------- */
 
   /**
-     * Provide an Object of available audio sources which can be used by this implementation.
-     * Each object key should be a device id and the key should be a human-readable label.
-     * @return {Promise<{string: string}>}
-     */
+   * Provide an Object of available audio sources which can be used by this implementation.
+   * Each object key should be a device id and the key should be a human-readable label.
+   * @return {Promise<{string: string}>}
+   */
   async getAudioSources() {
     return new Promise((resolve) => {
       try {
         JitsiMeetJS.mediaDevices.enumerateDevices((list) => {
-          resolve(this._jitsiClient.deviceInfoToObject(list, "audioinput"));
+          resolve(deviceInfoToObject(list, "audioinput"));
         });
       } catch (err) {
         log.error("getAudioSources error:", err);
@@ -203,15 +208,15 @@ export default class JitsiAVClient extends AVClient {
   /* -------------------------------------------- */
 
   /**
-     * Provide an Object of available video sources which can be used by this implementation.
-     * Each object key should be a device id and the key should be a human-readable label.
-     * @return {Promise<{string: string}>}
-     */
+   * Provide an Object of available video sources which can be used by this implementation.
+   * Each object key should be a device id and the key should be a human-readable label.
+   * @return {Promise<{string: string}>}
+   */
   async getVideoSources() {
     return new Promise((resolve) => {
       try {
         JitsiMeetJS.mediaDevices.enumerateDevices((list) => {
-          resolve(this._jitsiClient.deviceInfoToObject(list, "videoinput"));
+          resolve(deviceInfoToObject(list, "videoinput"));
         });
       } catch (err) {
         log.error("getVideoSources error:", err);
@@ -225,10 +230,10 @@ export default class JitsiAVClient extends AVClient {
   /* -------------------------------------------- */
 
   /**
-     * Return an array of Foundry User IDs which are currently connected to A/V.
-     * The current user should also be included as a connected user in addition to all peers.
-     * @return {string[]}           The connected User IDs
-     */
+   * Return an array of Foundry User IDs which are currently connected to A/V.
+   * The current user should also be included as a connected user in addition to all peers.
+   * @return {string[]}           The connected User IDs
+   */
   getConnectedUsers() {
     return Object.keys(this._jitsiClient.usernameCache);
   }
@@ -236,11 +241,11 @@ export default class JitsiAVClient extends AVClient {
   /* -------------------------------------------- */
 
   /**
-     * Provide a MediaStream instance for a given user ID
-     * @param {string} userId        The User id
-     * @return {MediaStream|null}    The MediaStream for the user, or null if the user does not have
-     *                                one
-     */
+   * Provide a MediaStream instance for a given user ID
+   * @param {string} userId        The User id
+   * @return {MediaStream|null}    The MediaStream for the user, or null if the user does not have
+   *                                one
+   */
   getMediaStreamForUser() {
     log.debug("getMediaStreamForUser called but is not used with JitsiRTC");
     return null;
@@ -249,30 +254,42 @@ export default class JitsiAVClient extends AVClient {
   /* -------------------------------------------- */
 
   /**
-     * Is outbound audio enabled for the current user?
-     * @return {boolean}
-     */
+   * Provide a MediaStream for monitoring a given user's voice volume levels.
+   * @param {string} userId       The User ID.
+   * @returns {MediaStream|null}  The MediaStream for the user, or null if the user does not have one.
+   */
+  getLevelsStreamForUser() {
+    log.debug("getLevelsStreamForUser called but is not used with JitsiRTC");
+    return null;
+  }
+
+  /* -------------------------------------------- */
+
+  /**
+   * Is outbound audio enabled for the current user?
+   * @return {boolean}
+   */
   isAudioEnabled() {
-    return this._jitsiClient.localAudioEnabled;
+    return !!this._jitsiClient.jitsiConference?.getLocalAudioTrack();
   }
 
   /* -------------------------------------------- */
 
   /**
-     * Is outbound video enabled for the current user?
-     * @return {boolean}
-     */
+   * Is outbound video enabled for the current user?
+   * @return {boolean}
+   */
   isVideoEnabled() {
-    return this._jitsiClient.localVideoEnabled;
+    return !!this._jitsiClient.jitsiConference?.getLocalVideoTrack();
   }
 
   /* -------------------------------------------- */
 
   /**
-     * Handle a request to enable or disable the outbound audio feed for the current game user.
-     * @param {boolean} enable        Whether the outbound audio track should be enabled (true) or
-     *                                  disabled (false)
-     */
+   * Handle a request to enable or disable the outbound audio feed for the current game user.
+   * @param {boolean} enable        Whether the outbound audio track should be enabled (true) or
+   *                                  disabled (false)
+   */
   async toggleAudio(enable) {
     // If useJitsiMeet is enabled, return
     if (this._jitsiClient.useJitsiMeet) {
@@ -280,9 +297,14 @@ export default class JitsiAVClient extends AVClient {
     }
 
     log.debug("Toggling audio:", enable);
-    if (!this._jitsiClient.localAudioBroadcastEnabled && this.settings.client.voice.mode === "ptt") return;
+    if (
+      !this._jitsiClient.localAudioBroadcastEnabled &&
+      this.settings.client.voice.mode === "ptt"
+    )
+      return;
     this._jitsiClient.localAudioEnabled = enable;
-    const localAudioTrack = await this._jitsiClient.jitsiConference.getLocalAudioTrack();
+    const localAudioTrack =
+      await this._jitsiClient.jitsiConference.getLocalAudioTrack();
     if (localAudioTrack) {
       if (enable) {
         await localAudioTrack.unmute();
@@ -295,11 +317,11 @@ export default class JitsiAVClient extends AVClient {
   /* -------------------------------------------- */
 
   /**
-     * Set whether the outbound audio feed for the current game user is actively broadcasting.
-     * This can only be true if audio is enabled, but may be false if using push-to-talk or voice
-     * activation modes.
-     * @param {boolean} broadcast   Whether outbound audio should be sent to connected peers or not?
-     */
+   * Set whether the outbound audio feed for the current game user is actively broadcasting.
+   * This can only be true if audio is enabled, but may be false if using push-to-talk or voice
+   * activation modes.
+   * @param {boolean} broadcast   Whether outbound audio should be sent to connected peers or not?
+   */
   async toggleBroadcast(broadcast) {
     // If useJitsiMeet is enabled, return
     if (this._jitsiClient.useJitsiMeet) {
@@ -309,7 +331,8 @@ export default class JitsiAVClient extends AVClient {
     log.debug("Toggling Broadcast audio:", broadcast);
 
     this._jitsiClient.localAudioBroadcastEnabled = broadcast;
-    const localAudioTrack = await this._jitsiClient.jitsiConference.getLocalAudioTrack();
+    const localAudioTrack =
+      await this._jitsiClient.jitsiConference.getLocalAudioTrack();
     if (localAudioTrack) {
       if (broadcast) {
         await localAudioTrack.unmute();
@@ -322,10 +345,10 @@ export default class JitsiAVClient extends AVClient {
   /* -------------------------------------------- */
 
   /**
-     * Handle a request to enable or disable the outbound video feed for the current game user.
-     * @param {boolean} enable        Whether the outbound video track should be enabled (true) or
-     *                                  disabled (false)
-     */
+   * Handle a request to enable or disable the outbound video feed for the current game user.
+   * @param {boolean} enable        Whether the outbound video track should be enabled (true) or
+   *                                  disabled (false)
+   */
   async toggleVideo(enable) {
     // If useJitsiMeet is enabled, return
     if (this._jitsiClient.useJitsiMeet) {
@@ -334,34 +357,39 @@ export default class JitsiAVClient extends AVClient {
 
     log.debug("Toggling video:", enable);
     this._jitsiClient.localVideoEnabled = enable;
-    const localVideoTrack = await this._jitsiClient.jitsiConference.getLocalVideoTrack();
+    const localVideoTrack =
+      await this._jitsiClient.jitsiConference.getLocalVideoTrack();
     if (localVideoTrack) {
       if (enable) {
         await localVideoTrack.unmute();
       } else {
         await localVideoTrack.mute();
       }
+      this.master.render();
     }
   }
 
   /* -------------------------------------------- */
 
   /**
-     * Set the Video Track for a given User ID to a provided VideoElement
-     * @param {string} userId                   The User ID to set to the element
-     * @param {HTMLVideoElement} videoElement   The HTMLVideoElement to which the video should be
-     *                                            set
-     */
+   * Set the Video Track for a given User ID to a provided VideoElement
+   * @param {string} userId                   The User ID to set to the element
+   * @param {HTMLVideoElement} videoElement   The HTMLVideoElement to which the video should be
+   *                                            set
+   */
   async setUserVideo(userId, videoElement) {
     log.debug("Setting video element:", videoElement, "for user:", userId);
 
     // If this if for our local user, attach our video track using Jitsi
     if (userId === game.user.id) {
       if (!this._jitsiClient.jitsiConference) {
-        log.warn("Attempted to set user video with no active Jitsi Conference; skipping");
+        log.warn(
+          "Attempted to set user video with no active Jitsi Conference; skipping"
+        );
         return;
       }
-      const localVideoTrack = await this._jitsiClient.jitsiConference.getLocalVideoTrack();
+      const localVideoTrack =
+        await this._jitsiClient.jitsiConference.getLocalVideoTrack();
       if (localVideoTrack && videoElement) {
         await localVideoTrack.attach(videoElement);
       }
@@ -370,8 +398,12 @@ export default class JitsiAVClient extends AVClient {
 
     // For all other users, get their video and audio streams
     const jitsiParticipant = this._jitsiClient.participantCache[userId];
-    const userVideoTrack = await jitsiParticipant.getTracksByMediaType("video")[0];
-    const userAudioTrack = await jitsiParticipant.getTracksByMediaType("audio")[0];
+    const userVideoTrack = await jitsiParticipant.getTracksByMediaType(
+      "video"
+    )[0];
+    const userAudioTrack = await jitsiParticipant.getTracksByMediaType(
+      "audio"
+    )[0];
 
     // Add the video for the user
     if (userVideoTrack) {
@@ -379,12 +411,15 @@ export default class JitsiAVClient extends AVClient {
     }
 
     // Get the audio element for the user
-    const audioElement = this._jitsiClient.getUserAudioElement(userId, videoElement);
+    const audioElement = this._jitsiClient.getUserAudioElement(
+      userId,
+      videoElement
+    );
 
     // Add the audio for the user
     if (userAudioTrack && audioElement) {
       if (JitsiMeetJS.mediaDevices.isDeviceChangeAvailable("output")) {
-      // Set audio output
+        // Set audio output
         userAudioTrack.setAudioOutput(this.settings.client.audioSink);
       } else if (this.settings.client.audioSink !== "default") {
         log.warn("Setting the audio output device is not available");
@@ -407,17 +442,31 @@ export default class JitsiAVClient extends AVClient {
   /* -------------------------------------------- */
 
   /**
-     * Handle changes to A/V configuration settings.
-     * @param {object} changed      The settings which have changed
-     */
+   * Handle changes to A/V configuration settings.
+   * @param {object} changed      The settings which have changed
+   */
   onSettingsChanged(changed) {
     log.debug("onSettingsChanged:", changed);
     const keys = Object.keys(flattenObject(changed));
 
+    // Change in the server configuration; reconnect
+    const serverChange = [
+      "world.server.type",
+      "world.server.url",
+      "world.server.username",
+      "world.server.password",
+      "world.server.room",
+    ].some((k) => keys.includes(k));
+    if (serverChange) {
+      this.master.connect();
+    }
+
     // Change audio or video sources
-    if (keys.some((k) => ["client.videoSrc", "client.audioSrc"].includes(k))
-      || hasProperty(changed, `users.${game.user.id}.canBroadcastVideo`)
-      || hasProperty(changed, `users.${game.user.id}.canBroadcastAudio`)) {
+    if (
+      keys.some((k) => ["client.videoSrc", "client.audioSrc"].includes(k)) ||
+      hasProperty(changed, `users.${game.user.id}.canBroadcastVideo`) ||
+      hasProperty(changed, `users.${game.user.id}.canBroadcastAudio`)
+    ) {
       this.master.connect();
     }
 
@@ -435,5 +484,15 @@ export default class JitsiAVClient extends AVClient {
     if (keys.some((k) => ["client.muteAll"].includes(k))) {
       this._jitsiClient.muteAll();
     }
+  }
+
+  /**
+   * Replace the local stream for each connected peer with a re-generated MediaStream
+   * @returns {Promise<Array>} (Really returns {Promise<void>})
+   */
+  async updateLocalStream() {
+    log.debug("updateLocalStream");
+    // This is a bit of a hack, but we are just going to reconnect
+    this.master.connect();
   }
 }

@@ -1,7 +1,4 @@
-import {
-  LANG_NAME,
-  MODULE_NAME,
-} from "./utils/constants.js";
+import { LANG_NAME, MODULE_NAME } from "./utils/constants.js";
 
 import * as log from "./utils/logging.js";
 
@@ -16,15 +13,19 @@ export default class JitsiBreakout {
           const { userId } = players[0].dataset;
           const { jitsiBreakoutRoom } = jitsiClient.settings.getUser(userId);
           return (
-            game.user.isGM
-            && !jitsiBreakoutRoom
-            && userId !== game.user.id
-            && !jitsiClient.isUserExternal(userId)
+            game.user.isGM &&
+            !jitsiBreakoutRoom &&
+            userId !== game.user.id &&
+            !jitsiClient.isUserExternal(userId)
           );
         },
         callback: (players) => {
           const breakoutRoom = randomID(32);
-          JitsiBreakout.startBreakout(players.data("user-id"), breakoutRoom, jitsiClient);
+          JitsiBreakout.startBreakout(
+            players.data("user-id"),
+            breakoutRoom,
+            jitsiClient
+          );
           JitsiBreakout.breakout(breakoutRoom, jitsiClient);
         },
       },
@@ -35,10 +36,10 @@ export default class JitsiBreakout {
           const { userId } = players[0].dataset;
           const { jitsiBreakoutRoom } = jitsiClient.settings.getUser(userId);
           return (
-            game.user.isGM
-            && jitsiClient.settings.getUser(userId).jitsiBreakoutRoom
-            && jitsiClient.breakoutRoom !== jitsiBreakoutRoom
-            && userId !== game.user.id
+            game.user.isGM &&
+            jitsiClient.settings.getUser(userId).jitsiBreakoutRoom &&
+            jitsiClient.breakoutRoom !== jitsiBreakoutRoom &&
+            userId !== game.user.id
           );
         },
         callback: (players) => {
@@ -54,26 +55,31 @@ export default class JitsiBreakout {
           const { userId } = players[0].dataset;
           const { jitsiBreakoutRoom } = jitsiClient.settings.getUser(userId);
           return (
-            game.user.isGM
-            && jitsiClient.breakoutRoom
-            && jitsiBreakoutRoom !== jitsiClient.breakoutRoom
-            && userId !== game.user.id
-            && !jitsiClient.isUserExternal(userId)
+            game.user.isGM &&
+            jitsiClient.breakoutRoom &&
+            jitsiBreakoutRoom !== jitsiClient.breakoutRoom &&
+            userId !== game.user.id &&
+            !jitsiClient.isUserExternal(userId)
           );
         },
-        callback: (players) => { JitsiBreakout.startBreakout(players.data("user-id"), jitsiClient.breakoutRoom, jitsiClient); },
+        callback: (players) => {
+          JitsiBreakout.startBreakout(
+            players.data("user-id"),
+            jitsiClient.breakoutRoom,
+            jitsiClient
+          );
+        },
       },
       {
         name: game.i18n.localize(`${LANG_NAME}.leaveAVBreakout`),
         icon: '<i class="fas fa-comment-slash"></i>',
         condition: (players) => {
           const { userId } = players[0].dataset;
-          return (
-            userId === game.user.id
-            && jitsiClient.breakoutRoom
-          );
+          return userId === game.user.id && jitsiClient.breakoutRoom;
         },
-        callback: () => { JitsiBreakout.breakout(null, jitsiClient); },
+        callback: () => {
+          JitsiBreakout.breakout(null, jitsiClient);
+        },
       },
       {
         name: game.i18n.localize(`${LANG_NAME}.removeFromAVBreakout`),
@@ -81,11 +87,7 @@ export default class JitsiBreakout {
         condition: (players) => {
           const { userId } = players[0].dataset;
           const { jitsiBreakoutRoom } = jitsiClient.settings.getUser(userId);
-          return (
-            game.user.isGM
-            && jitsiBreakoutRoom
-            && userId !== game.user.id
-          );
+          return game.user.isGM && jitsiBreakoutRoom && userId !== game.user.id;
         },
         callback: (players) => {
           JitsiBreakout.endUserBreakout(players[0].dataset.userId, jitsiClient);
@@ -96,13 +98,12 @@ export default class JitsiBreakout {
         icon: '<i class="fas fa-ban"></i>',
         condition: (players) => {
           const { userId } = players[0].dataset;
-          return (
-            game.user.isGM
-            && userId === game.user.id
-          );
+          return game.user.isGM && userId === game.user.id;
         },
-        callback: () => { JitsiBreakout.endAllBreakouts(jitsiClient); },
-      },
+        callback: () => {
+          JitsiBreakout.endAllBreakouts(jitsiClient);
+        },
+      }
     );
   }
 
@@ -123,7 +124,11 @@ export default class JitsiBreakout {
       return;
     }
 
-    jitsiClient.settings.set("client", `users.${userId}.jitsiBreakoutRoom`, breakoutRoom);
+    jitsiClient.settings.set(
+      "client",
+      `users.${userId}.jitsiBreakoutRoom`,
+      breakoutRoom
+    );
     game.socket.emit(`module.${MODULE_NAME}`, {
       action: "breakout",
       userId,

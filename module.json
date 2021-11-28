@@ -18,16 +18,12 @@
       "url": "https://github.com/luvolondon"
     }
   ],
-  "version": "0.6.0",
+  "version": "0.6.4",
   "minimumCoreVersion": "0.7.2",
-  "compatibleCoreVersion": "0.8.6",
-  "manifestPlusVersion": "1.1.0",
-  "esmodules": [
-    "src/jitsirtc.js"
-  ],
-  "styles": [
-    "css/jitsirtc.css"
-  ],
+  "compatibleCoreVersion": "9.231",
+  "manifestPlusVersion": "1.2.0",
+  "esmodules": ["src/jitsirtc.js"],
+  "styles": ["css/jitsirtc.css"],
   "dependencies": [
     {
       "name": "lib-captions",
