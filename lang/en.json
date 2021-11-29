@@ -38,5 +38,5 @@
   "WEBRTC.WebRTCServer": "Choose Jitsi Server",
   "WEBRTC.WebRTCServerURL": "Jitsi Server Address",
   "WEBRTC.WebRTCServerUsername": "Jitsi Server Username",
-  "WEBRTC.WebRTCServerPassword": "LiveKit Server Password"
+  "WEBRTC.WebRTCServerPassword": "Jitsi Server Password"
 }
