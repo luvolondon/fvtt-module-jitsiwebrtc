@@ -35,6 +35,11 @@
   "JITSIRTC.endAllAVBreakouts": "Finalizar A/V privadas",
   "JITSIRTC.hiddenUserJoined": "El usuario oculto {displayName} se ha unido a la sala de A/V",
   "JITSIRTC.hiddenUserLeft": "El usuario oculto {displayName} ha dejado la sala de A/V",
-
-  "WEBRTC.FVTTSignalingServer": "Jitsi Meet Beta Público (beta.meet.jit.si)"
+	
+	"WEBRTC.CustomSignalingServer": "Servidor personalizado",
+  "WEBRTC.FVTTSignalingServer": "Jitsi Meet Beta Público (beta.meet.jit.si)",
+  "WEBRTC.WebRTCServer": "Seleccione servidor Jitsi",
+  "WEBRTC.WebRTCServerURL": "Dirección del servidor Jitsi",	
+	"WEBRTC.WebRTCServerUsername": "Usuario del servidor Jitsi",
+  "WEBRTC.WebRTCServerPassword": "Contraseña del servidor Jitsi"
 }
