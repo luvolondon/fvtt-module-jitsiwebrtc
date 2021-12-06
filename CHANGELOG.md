@@ -1,3 +1,9 @@
+# v0.6.5
+
+- Add warning to README about Jitsi's 5 user limit and the module entering maintenance mode. Suggest users upgrade to the newer [LiveKit AVClient](https://foundryvtt.com/packages/avclient-livekit) module
+- Updated Spanish translations and fixed English string thanks to José E. Lozano
+- Update FVTT compatibility to v9
+
 # v0.6.4
 
 - Fix a missing file during the github build process that preventing the A/V settings page from

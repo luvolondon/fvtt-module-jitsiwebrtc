@@ -18,9 +18,9 @@
       "url": "https://github.com/luvolondon"
     }
   ],
-  "version": "0.6.4",
+  "version": "0.6.5",
   "minimumCoreVersion": "0.7.2",
-  "compatibleCoreVersion": "9.231",
+  "compatibleCoreVersion": "9",
   "manifestPlusVersion": "1.2.0",
   "esmodules": ["src/jitsirtc.js"],
   "styles": ["css/jitsirtc.css"],
