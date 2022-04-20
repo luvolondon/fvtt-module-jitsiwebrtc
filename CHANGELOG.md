@@ -1,3 +1,9 @@
+# v0.6.6 - End maintenance
+
+- Set module title to deprecated
+- Update README with deprecation warning
+- Add hidable deprecation warning page that will be shown to GMs
+
 # v0.6.5
 
 - Add warning to README about Jitsi's 5 user limit and the module entering maintenance mode. Suggest users upgrade to the newer [LiveKit AVClient](https://foundryvtt.com/packages/avclient-livekit) module
