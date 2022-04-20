@@ -1,7 +1,7 @@
 {
   "name": "jitsirtc",
-  "title": "Jitsi WebRTC client",
-  "description": "Use Jitsi to handle A/V. Connect to jitsi.org or self-hosted server.",
+  "title": "Jitsi WebRTC client (deprecated)",
+  "description": "Use Jitsi to handle A/V. Connect to jitsi.org or self-hosted server. Warning: no longer maintained!",
   "author": "bekit, Luvolondon",
   "authors": [
     {

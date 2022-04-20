@@ -1,5 +1,8 @@
 # Jitsi WebRTC client
 
+> | :exclamation::warning::exclamation: [This module is now deprecated and no longer maintained](https://github.com/luvolondon/fvtt-module-jitsiwebrtc/issues/99) :exclamation::warning::exclamation: |
+> | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+
 Replacement for the EasyRTC p2p client to use a Jitsi relay server for A/V. It has the main advantage of being able to run all communication via a relay server. A player only needs to send her/his A/V stream to a single receiver, where it is distributed to all other players. If you have more then 2 players, this is a bandwidth improvement. This feature is called SFU (Selective Forwarding Unit). Read more about Jitsi on https://jitsi.org/.
 
 First tests with 4-5 players resulted in ~700kbit/s upload and ~ 1Mbit/s download rate for each player.
@@ -15,7 +18,7 @@ First tests with 4-5 players resulted in ~700kbit/s upload and ~ 1Mbit/s downloa
 >
 > However, I highly suggest instead switching to the newer [LiveKit AVClient](https://foundryvtt.com/packages/avclient-livekit) module. I have found LiveKit to be a much more stable A/V platform to work with and the server much easier to run. There are currently no free public LiveKit servers. There are links on the module page to guides on running your own server, and I (bekit) also provide a highly available cluster of LiveKit servers with nodes in multiple parts of the world. To cover my expenses, this cluster is only available to subscribers of [my Patreon](https://www.patreon.com/bePatron?u=5662939).
 >
-> Due to ongoing issues both developing and using the Jitsi module, I will no longer be actively developing it. I will continue to make minor adjustments and bug fixes, but this module may soon enter a deprecated state unless another developer would like to take over work on it.
+> Due to ongoing issues both developing and using the Jitsi module, I will no longer be actively developing or maintaining it.
 
 ## Installation
 

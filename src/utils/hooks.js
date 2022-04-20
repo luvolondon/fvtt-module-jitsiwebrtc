@@ -1,6 +1,7 @@
 import { MODULE_NAME } from "./constants.js";
 import JitsiAVConfig from "../JitsiAVConfig.js";
 import registerModuleSettings from "./registerModuleSettings.js";
+import JitsiAVDeprecation from "../JitsiAVDeprecation.js";
 
 /* -------------------------------------------- */
 /*  Hook calls                                  */
@@ -34,6 +35,17 @@ Hooks.on("ready", () => {
     type: JitsiAVConfig,
     restricted: false,
   });
+
+  // Show deprecation warning to GM if it isn't hidden
+  const module = game.modules.get(MODULE_NAME);
+  if (
+    game.user.isGM &&
+    game.settings.get(MODULE_NAME, "hideDeprecationWarning") !==
+      module.data.version
+  ) {
+    const deprecationWarning = new JitsiAVDeprecation();
+    deprecationWarning.render(true);
+  }
 });
 
 Hooks.on("renderCameraViews", (cameraViews, cameraViewsElement) => {

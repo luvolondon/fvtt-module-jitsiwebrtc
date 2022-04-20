@@ -117,6 +117,16 @@ export default function registerModuleSettings() {
     onChange: (value) => log.setDebug(value),
   });
 
+  // Register hide deprecation warning
+  helpers.registerModuleSetting({
+    name: "hideDeprecationWarning",
+    scope: "client",
+    config: false,
+    default: "",
+    type: String,
+    onChange: () => {},
+  });
+
   // Set the initial debug level
   log.setDebug(game.settings.get(MODULE_NAME, "debug"));
 }
